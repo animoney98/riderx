@@ -1,16 +1,31 @@
 'use client';
-import { useActionState } from 'react';
+import { useActionState, useState, useTransition } from 'react';
 import { importAction, type Preview } from './actions';
 
 export function UploadForm() {
   const [res, action, pending] = useActionState<Preview | null, FormData>(importAction, null);
+  const [file, setFile] = useState<File | null>(null);
+  const [localError, setLocalError] = useState('');
+  const [, startTransition] = useTransition();
+
+  // Submitted by hand so the chosen file stays in place between "Check file" and "Import".
+  function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!file) { setLocalError('Choose an Excel file first.'); return; }
+    setLocalError('');
+    const intent = (e.nativeEvent as SubmitEvent).submitter?.getAttribute('value') ?? 'preview';
+    const fd = new FormData();
+    fd.set('file', file);
+    fd.set('intent', intent);
+    fd.set('checksum', res?.checksum ?? '');
+    startTransition(() => action(fd));
+  }
   return (
     <>
-      <form action={action} className="card">
+      <form onSubmit={submit} className="card">
         <h2>Upload a Zomato payout file</h2>
         <div className="row">
-          <label>Excel file (.xlsx)<input type="file" name="file" accept=".xlsx,.xls" required /></label>
-          <input type="hidden" name="checksum" value={res?.checksum ?? ''} />
+          <label>Excel file (.xlsx)<input type="file" accept=".xlsx,.xls" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
           <button type="submit" name="intent" value="preview" disabled={pending}>{pending ? 'Working…' : 'Check file'}</button>
           {res?.ok && res.canImport && !res.committed && (
             <button type="submit" name="intent" value="commit" disabled={pending}>Import {res.validRows} trips</button>
@@ -19,6 +34,7 @@ export function UploadForm() {
         <p className="note">"Check file" saves nothing. "Import" saves the trips and calculates earnings. Importing the same file twice never creates duplicates.</p>
       </form>
 
+      {localError && <div className="alert bad" role="alert">{localError}</div>}
       {res?.committed && (
         <div className="alert ok" role="status">
           Imported {res.committed.inserted} new trips. {res.committed.identical} were already saved and unchanged.
