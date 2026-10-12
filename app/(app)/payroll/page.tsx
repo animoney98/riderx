@@ -6,6 +6,7 @@ import { addDays, cycleFor } from '@/src/engine/calendar';
 import { formatINR } from '@/src/engine/payout';
 import { WeekPicker } from '../week-picker';
 import { approvePayroll } from './actions';
+import { loadPayouts } from '@/lib/payments';
 
 const km = (v: number) => (v / 100).toFixed(2);
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -25,6 +26,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
   const rows = buildWeekly(trips, cycle, slab1Limit);
   const { data: approvedCycle } = await sb.from('payout_cycles').select('id, status, approved_at, profiles:approved_by(full_name)').eq('period_start', cycle.start).maybeSingle();
   const { data: payouts } = approvedCycle ? await sb.from('rider_payouts').select('gross_paise').eq('payout_cycle_id', approvedCycle.id) : { data: null };
+  const pay = approvedCycle ? await loadPayouts(sb, cycle.start) : null;
+  const payByFe = new Map((pay?.payouts ?? []).map((p) => [p.feId, p]));
+  const paidTotal = (pay?.payouts ?? []).reduce((s, p) => s + p.paidPaise, 0);
   const approvedTotal = (payouts ?? []).reduce((s, p) => s + Number(p.gross_paise), 0);
   const names = await loadRiderNames(sb, rows.map((r) => r.feId));
   const [bank, debit] = await Promise.all([loadBankDetails(sb, rows.map((r) => r.feId)), loadSetting(sb, 'bank_debit_account')]);
@@ -42,7 +46,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
     ['Additions / deductions', '₹0.00 / ₹0.00'],
     [approvedCycle ? 'Net salary payable' : 'Net salary payable (draft)', formatINR(gross)],
     ['Approved', approvedCycle ? 'Approved' : 'Not approved yet'],
-    ['Paid', '₹0.00'],
+    ['Paid', formatINR(paidTotal)],
   ];
 
   return (
@@ -55,6 +59,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
       <div>
         <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: '#141414' }} href={`/payroll/export?week=${cycle.start}`}>Download Payroll Excel (draft)</a>{' '}
         <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: '#141414', marginLeft: 8 }} href={`/payroll/bank-file?week=${cycle.start}`}>Download Bank file</a>
+        {approvedCycle && <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: '#141414', marginLeft: 8 }} href={`/payroll/payments?week=${cycle.start}`}>Record payments</a>}
         <p className="note" style={{ marginTop: 8 }}>
           {!approvedCycle && <>The bank file is available after you approve the week. </>}Bank file: {payable.length - noBank.length} of {payable.length} riders ready, {formatINR(payable.filter((r) => bank.has(r.feId)).reduce((s, r) => s + r.grossPaise, 0))}.
           {!debit && <> The company debit account is not set — <a href="/settings">add it in Bank Settings</a>.</>}
@@ -116,8 +121,8 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                   <td className="n"><b>{r.orders}</b></td><td className="n">{r.slab1Orders}</td><td className="n">{r.slab2Orders}</td><td className="n">{formatINR(r.basePaise)}</td>
                   <td className="n">{km(r.km100)}</td><td className="n">{km(r.extraKm100)}</td><td className="n">{formatINR(r.distancePaise)}</td>
                   <td className="n">{r.batchedTrips}</td><td className="n">{formatINR(r.batchBonusPaise)}</td><td className="n">{formatINR(r.rainPaise)}</td><td className="n">{formatINR(r.festivalPaise)}</td>
-                  <td className="n">{formatINR(r.grossPaise)}</td><td className="n"><b>{formatINR(r.grossPaise)}</b></td><td className="n">₹0.00</td><td className="n">{formatINR(r.grossPaise)}</td>
-                  <td>{cycle.payDate}</td><td>{approvedCycle ? <span className="pill p-ok">Approved</span> : <span className="pill p-warn">Draft</span>}</td>
+                  <td className="n">{formatINR(r.grossPaise)}</td><td className="n"><b>{formatINR(r.grossPaise)}</b></td><td className="n">{formatINR(payByFe.get(r.feId)?.paidPaise ?? 0)}</td><td className="n">{formatINR(payByFe.get(r.feId)?.outstandingPaise ?? r.grossPaise)}</td>
+                  <td>{cycle.payDate}</td><td>{approvedCycle ? <span className={payByFe.get(r.feId)?.status === 'Paid' ? 'pill p-ok' : 'pill p-warn'}>{payByFe.get(r.feId)?.status ?? 'Approved'}</span> : <span className="pill p-warn">Draft</span>}</td>
                 </tr>
               ))}
               {rows.length > 0 && (
@@ -127,7 +132,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                   <td className="n">{sum((r) => r.orders)}</td><td className="n">{sum((r) => r.slab1Orders)}</td><td className="n">{sum((r) => r.slab2Orders)}</td><td className="n">{formatINR(sum((r) => r.basePaise))}</td>
                   <td className="n">{km(sum((r) => r.km100))}</td><td className="n">{km(sum((r) => r.extraKm100))}</td><td className="n">{formatINR(sum((r) => r.distancePaise))}</td>
                   <td className="n">{sum((r) => r.batchedTrips)}</td><td className="n">{formatINR(sum((r) => r.batchBonusPaise))}</td><td className="n">{formatINR(sum((r) => r.rainPaise))}</td><td className="n">{formatINR(sum((r) => r.festivalPaise))}</td>
-                  <td className="n">{formatINR(gross)}</td><td className="n">{formatINR(gross)}</td><td className="n">₹0.00</td><td className="n">{formatINR(gross)}</td><td></td><td></td>
+                  <td className="n">{formatINR(gross)}</td><td className="n">{formatINR(gross)}</td><td className="n">{formatINR(paidTotal)}</td><td className="n">{formatINR(approvedCycle ? approvedTotal - paidTotal : gross)}</td><td></td><td></td>
                 </tr>
               )}
               {!rows.length && <tr><td colSpan={30} className="note">No trips saved for this week. Import a Zomato file first.</td></tr>}
