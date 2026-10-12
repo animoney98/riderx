@@ -85,7 +85,8 @@ export function parseZomatoWorkbook(buf: Buffer | Uint8Array): ParseResult {
       isRaining: num(g('israining')) === 1,
       pickupKm100: Math.round(pickup * 100),
       dropKm100: Math.round(drop * 100),
-      zomatoPayPaise: Math.round(pay * 100),
+      // 'Total Payout' already includes Zomato's batch bonus; fall back to 'pay' if absent.
+      zomatoPayPaise: Math.round((num(g('Total Payout')) ?? pay) * 100),
       dcPaise: Math.round((num(g('DC')) ?? num(g('final_dc')) ?? 0) * 100),
       tipPaise: Math.round((num(g('tip_amount')) ?? 0) * 100),
       zomatoDistancePaise: Math.round((num(g('Distance Amount')) ?? 0) * 100),

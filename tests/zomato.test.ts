@@ -23,6 +23,10 @@ run('Zomato sample file', () => {
     expect(new Set(parsed.rows.map((r) => r.feId)).size).toBe(2);
     expect(parsed.rows.filter((r) => r.ordersInTrip === 2)).toHaveLength(3);
   });
+  it('Zomato revenue per file equals the Total Payout column (₹4,285)', () => {
+    const parsed = load();
+    expect(parsed.rows.reduce((a, r) => a + r.zomatoPayPaise, 0)).toBe(428500);
+  });
   it('our extra-distance pay equals Zomato Distance Amount on every trip', () => {
     const parsed = load();
     const calc = calculateTrips(toTrips(parsed.rows), DEFAULT_RATE_CARD);
