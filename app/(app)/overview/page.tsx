@@ -1,11 +1,11 @@
-import Link from 'next/link';
 import { supabaseServer } from '@/lib/supabase-server';
-import { resolveWeekStart, loadRiderNames, loadBankDetails } from '@/lib/week-data';
+import { resolveWeekStart, loadRiderNames, loadBankDetails, loadWeekTrips } from '@/lib/week-data';
 import { loadWeekFinance, loadReceipts } from '@/lib/finance';
 import { loadPayouts } from '@/lib/payments';
-import { WeeklyBars } from './chart';
 import { addDays, cycleFor } from '@/src/engine/calendar';
-import { formatINR } from '@/src/engine/payout';
+import { OverviewView, type OverviewData } from './view';
+
+const outstanding = (pay: Awaited<ReturnType<typeof loadPayouts>>) => (pay ? pay.payouts.reduce((s, p) => s + p.outstandingPaise, 0) : null);
 
 export default async function Overview() {
   const sb = await supabaseServer();
@@ -20,6 +20,7 @@ export default async function Overview() {
   const names = await loadRiderNames(sb, cur.fin.rows.map((r) => r.feId));
   const bank = await loadBankDetails(sb, cur.fin.rows.map((r) => r.feId));
   const { count: riderCount } = await sb.from('riders').select('id', { count: 'exact', head: true }).eq('status', 'active');
+  const { trips } = await loadWeekTrips(sb, cur.c.start, cur.c.end);
 
   const alerts: { text: string; href: string }[] = [];
   const unreg = cur.fin.rows.filter((r) => !names.has(r.feId)).length;
@@ -32,48 +33,20 @@ export default async function Overview() {
   if (cur.fin.totals.revenuePaise > cur.received && cur.fin.rows.length) alerts.push({ text: `Zomato money for the week of ${cur.c.start} is not fully received`, href: `/reconciliation?week=${cur.c.start}` });
 
   const t = cur.fin.totals;
-  return (
-    <>
-      <div>
-        <div className="note" style={{ textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Overview</div>
-        <h1>Week of {cur.c.start}</h1>
-        <div className="note">The latest week with imported trips. Everything here comes from the same saved trips as the other pages.</div>
-      </div>
-      <section className="grid">
-        <div className="stat"><span>Active riders</span><b>{riderCount ?? 0}</b></div>
-        <div className="stat"><span>Riders with orders</span><b>{cur.fin.rows.length}</b></div>
-        <div className="stat"><span>Orders</span><b>{t.orders}</b></div>
-        <div className="stat"><span>Zomato payout</span><b>{formatINR(t.revenuePaise)}</b></div>
-        <div className="stat"><span>Rider earnings</span><b>{formatINR(t.riderPaise)}</b></div>
-        <div className="stat"><span>Margin</span><b>{formatINR(t.marginPaise)}{t.marginPct !== null ? ` (${t.marginPct}%)` : ''}</b></div>
-        <div className="stat"><span>Payroll</span><b>{cur.pay ? 'Approved' : 'Draft'}</b></div>
-        <div className="stat"><span>Rider pay outstanding</span><b>{cur.pay ? formatINR(cur.pay.payouts.reduce((s, p) => s + p.outstandingPaise, 0)) : '—'}</b></div>
-      </section>
-
-      <section className="card">
-        <h2>Needs attention</h2>
-        {alerts.length ? <ul>{alerts.map((a) => <li key={a.text}><Link href={a.href}>{a.text}</Link></li>)}</ul> : <p>Nothing needs attention.</p>}
-      </section>
-
-      <section className="card">
-        <h2>Last 8 weeks</h2>
-        <WeeklyBars bars={data.filter((d) => d.fin.rows.length).reverse().map((d) => ({ label: d.c.start.slice(5), revenuePaise: d.fin.totals.revenuePaise, riderPaise: d.fin.totals.riderPaise }))} />
-        <div className="tbl"><table>
-          <thead><tr><th>Week</th><th className="n">Orders</th><th className="n">Zomato payout</th><th className="n">Rider earnings</th><th className="n">Margin</th><th>Payroll</th><th className="n">Rider pay outstanding</th><th className="n">Zomato to receive</th></tr></thead>
-          <tbody>
-            {data.filter((d) => d.fin.rows.length).map((d) => (
-              <tr key={d.c.start}>
-                <td><Link href={`/payroll?week=${d.c.start}`}>{d.c.start}</Link></td><td className="n">{d.fin.totals.orders}</td><td className="n">{formatINR(d.fin.totals.revenuePaise)}</td>
-                <td className="n">{formatINR(d.fin.totals.riderPaise)}</td><td className="n">{formatINR(d.fin.totals.marginPaise)}</td>
-                <td><span className={d.pay ? 'pill p-ok' : 'pill p-warn'}>{d.pay ? 'Approved' : 'Draft'}</span></td>
-                <td className="n">{d.pay ? formatINR(d.pay.payouts.reduce((s, p) => s + p.outstandingPaise, 0)) : '—'}</td>
-                <td className="n">{formatINR(d.fin.totals.revenuePaise - d.received)}</td>
-              </tr>
-            ))}
-            {!data.some((d) => d.fin.rows.length) && <tr><td colSpan={8} className="note">No trips imported yet.</td></tr>}
-          </tbody>
-        </table></div>
-      </section>
-    </>
-  );
+  const sum = (f: (x: (typeof trips)[number]) => number) => trips.reduce((s, x) => s + f(x), 0);
+  const prev = data[1];
+  const view: OverviewData = {
+    weekStart: cur.c.start, weekEnd: cur.c.end,
+    activeRiders: riderCount ?? 0, ridersWithOrders: cur.fin.rows.length, orders: t.orders,
+    revenuePaise: t.revenuePaise, riderPaise: t.riderPaise, marginPaise: t.marginPaise, marginPct: t.marginPct,
+    prevRevenuePaise: prev.fin.rows.length ? prev.fin.totals.revenuePaise : null,
+    approved: !!cur.pay, outstandingPaise: outstanding(cur.pay),
+    split: { basePaise: sum((x) => x.basePaise), distancePaise: sum((x) => x.distancePaise), batchPaise: sum((x) => x.batchBonusPaise), rainPaise: sum((x) => x.rainPaise), festivalPaise: sum((x) => x.festivalPaise) },
+    alerts,
+    weeks: data.filter((d) => d.fin.rows.length).map((d) => ({
+      start: d.c.start, orders: d.fin.totals.orders, revenuePaise: d.fin.totals.revenuePaise, riderPaise: d.fin.totals.riderPaise, marginPaise: d.fin.totals.marginPaise,
+      approved: !!d.pay, outstandingPaise: outstanding(d.pay), toReceivePaise: d.fin.totals.revenuePaise - d.received,
+    })),
+  };
+  return <OverviewView d={view} />;
 }
