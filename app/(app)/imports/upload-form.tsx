@@ -1,23 +1,34 @@
 'use client';
 import { useActionState } from 'react';
-import { previewImport, type Preview } from './actions';
+import { importAction, type Preview } from './actions';
 
 export function UploadForm() {
-  const [res, action, pending] = useActionState<Preview | null, FormData>(previewImport, null);
+  const [res, action, pending] = useActionState<Preview | null, FormData>(importAction, null);
   return (
     <>
       <form action={action} className="card">
         <h2>Upload a Zomato payout file</h2>
         <div className="row">
           <label>Excel file (.xlsx)<input type="file" name="file" accept=".xlsx,.xls" required /></label>
-          <button type="submit" disabled={pending}>{pending ? 'Checking…' : 'Check file'}</button>
+          <input type="hidden" name="checksum" value={res?.checksum ?? ''} />
+          <button type="submit" name="intent" value="preview" disabled={pending}>{pending ? 'Working…' : 'Check file'}</button>
+          {res?.ok && res.canImport && !res.committed && (
+            <button type="submit" name="intent" value="commit" disabled={pending}>Import {res.validRows} trips</button>
+          )}
         </div>
-        <p className="note">This only checks the file. Nothing is saved yet.</p>
+        <p className="note">"Check file" saves nothing. "Import" saves the trips and calculates earnings. Importing the same file twice never creates duplicates.</p>
       </form>
 
+      {res?.committed && (
+        <div className="alert ok" role="status">
+          Imported {res.committed.inserted} new trips. {res.committed.identical} were already saved and unchanged.
+          {res.committed.conflicts > 0 && ` ${res.committed.conflicts} trips differ from what was saved earlier and were left untouched for review.`}
+          {' '}Earnings calculated for {res.committed.earningsWritten} trips.
+        </div>
+      )}
       {res?.fatal && <div className="alert bad" role="alert">{res.fatal}</div>}
 
-      {res?.ok && (
+      {res?.ok && !res.committed && (
         <>
           <div className="grid">
             <div className="stat"><span>Rows in file</span><b>{res.totalRows}</b></div>

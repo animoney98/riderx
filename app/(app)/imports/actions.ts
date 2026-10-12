@@ -1,12 +1,18 @@
 'use server';
 import { supabaseServer } from '@/lib/supabase-server';
 import { parseZomatoWorkbook, toTrips } from '@/src/import/zomatoParser';
-import { calculateTrips, dailyTotals, DEFAULT_RATE_CARD, formatINR } from '@/src/engine/payout';
+import { createHash } from 'node:crypto';
+import { calculateTrips, dailyTotals, formatINR } from '@/src/engine/payout';
+import { loadRateCard } from '@/lib/rate-card';
+import { recalculateEarnings } from '@/lib/earnings';
 import { cycleFor } from '@/src/engine/calendar';
 
 export interface Preview {
   ok: boolean;
   fatal?: string;
+  checksum?: string;
+  canImport?: boolean;
+  committed?: { inserted: number; identical: number; conflicts: number; earningsWritten: number };
   filename?: string;
   totalRows?: number;
   validRows?: number;
@@ -21,16 +27,19 @@ export interface Preview {
 
 const fmtKm = (km100: number) => (km100 / 100).toFixed(2);
 
-// Preview only. Nothing is written to the database in this step.
-export async function previewImport(_prev: Preview | null, formData: FormData): Promise<Preview> {
+// intent=preview checks the file and writes nothing. intent=commit re-checks it and saves.
+export async function importAction(_prev: Preview | null, formData: FormData): Promise<Preview> {
+  const intent = String(formData.get('intent') ?? 'preview');
   const file = formData.get('file');
   if (!(file instanceof File) || file.size === 0) return { ok: false, fatal: 'Choose an Excel (.xlsx) file first.' };
   if (!/\.xlsx?$/i.test(file.name)) return { ok: false, fatal: 'Only .xlsx or .xls files are supported.' };
   if (file.size > 10 * 1024 * 1024) return { ok: false, fatal: 'File is larger than 10 MB.' };
 
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const checksum = createHash('sha256').update(bytes).digest('hex');
   let parsed;
   try {
-    parsed = parseZomatoWorkbook(Buffer.from(await file.arrayBuffer()));
+    parsed = parseZomatoWorkbook(bytes);
   } catch {
     return { ok: false, fatal: 'This file could not be read as an Excel workbook.' };
   }
@@ -55,7 +64,9 @@ export async function previewImport(_prev: Preview | null, formData: FormData): 
   }
 
   const trips = toTrips(parsed.rows);
-  const earnings = calculateTrips(trips, DEFAULT_RATE_CARD);
+  const firstDate = trips.map((t) => t.operationalDate).sort()[0];
+  const { id: cardId, card } = await loadRateCard(sb, firstDate);
+  const earnings = calculateTrips(trips, card);
   const zomatoByFe = new Map<string, number>();
   for (const r of parsed.rows) zomatoByFe.set(r.feId, (zomatoByFe.get(r.feId) ?? 0) + r.zomatoPayPaise);
 
@@ -69,12 +80,44 @@ export async function previewImport(_prev: Preview | null, formData: FormData): 
     perRider.set(fe, p);
   }
 
+  const allMatched = feIds.every((fe) => nameByFe.has(fe));
+
+  if (intent === 'commit') {
+    if (String(formData.get('checksum') ?? '') !== checksum) return { ok: false, fatal: 'The file is different from the one you checked. Click "Check file" again before importing.' };
+    if (!allMatched) return { ok: false, fatal: 'Some FE IDs are not registered as riders. Add them on the Riders page first.' };
+    const sortedDates = trips.map((t) => t.operationalDate).sort();
+    const { data: res, error } = await sb.rpc('commit_zomato_import', {
+      p_filename: file.name,
+      p_checksum: checksum,
+      p_period_start: sortedDates[0],
+      p_period_end: sortedDates[sortedDates.length - 1],
+      p_trips: parsed.rows.map((r) => ({
+        trip_id: r.tripId, fe_id: r.feId, operational_date: r.deliveredAt.slice(0, 10), delivered_at: r.deliveredAt,
+        orders: r.ordersInTrip, raining: r.isRaining, pickup_km100: r.pickupKm100, drop_km100: r.dropKm100,
+        zomato_pay_paise: r.zomatoPayPaise, dc_paise: r.dcPaise, tip_paise: r.tipPaise, zomato_distance_paise: r.zomatoDistancePaise,
+      })),
+      p_errors: parsed.issues,
+    });
+    if (error) return { ok: false, fatal: `Import failed and nothing was saved: ${error.message}` };
+    if (!cardId) return { ok: false, fatal: 'Trips were saved, but no active rate card exists, so earnings were not calculated. Run migration 0002 and import again.' };
+    let written = 0;
+    try {
+      const r = await recalculateEarnings(sb, feIds, sortedDates[0], sortedDates[sortedDates.length - 1], card, cardId);
+      written = r.written;
+    } catch (e) {
+      return { ok: false, fatal: `Trips were saved, but earnings could not be calculated: ${(e as Error).message}. Importing the same file again will retry safely.` };
+    }
+    return { ok: true, filename: file.name, committed: { inserted: res.inserted, identical: res.identical, conflicts: res.conflicts.length, earningsWritten: written } };
+  }
+
   const dates = trips.map((t) => t.operationalDate).sort();
   const cycleMap = new Map(dates.map((d) => [cycleFor(d).start, cycleFor(d)]));
   const sum = (xs: Iterable<number>) => [...xs].reduce((a, b) => a + b, 0);
 
   return {
     ok: true,
+    checksum,
+    canImport: allMatched,
     filename: file.name,
     totalRows: parsed.totalRows,
     validRows: parsed.rows.length,

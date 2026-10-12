@@ -12,3 +12,6 @@ Rules implemented (confirmed by the owner, 12 Oct 2026):
 - Extra km = (pickup + drop) − 6, ₹5/km. Batched trip counts as 2 orders, +₹30 once per batched trip.
 - Operational day changes at IST midnight (delivered_at). Weekly cycle Mon–Sun, paid Friday of following week.
 - Tips are excluded from payroll. Zomato's pay to RiderX is revenue, never rider pay.
+
+## Database setup
+Run the files in `supabase/migrations/` in order (0001, then 0002) in the Supabase SQL Editor.
