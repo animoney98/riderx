@@ -18,13 +18,15 @@ export async function GET(req: Request) {
   const cycle = cycleFor(start);
   const [{ trips, withoutEarnings }, { card }] = await Promise.all([loadWeekTrips(sb, cycle.start, cycle.end), loadRateCard(sb, start)]);
   const riders = await loadRiderInfo(sb, [...new Set(trips.map((t) => t.feId))]);
+  const { data: ap } = await sb.from('payout_cycles').select('status').eq('period_start', cycle.start).maybeSingle();
+  const label = ap ? 'APPROVED' : 'DRAFT - not approved';
   try {
     const { buffer } = await buildPayrollWorkbook({
       cycle, trips, riders,
       slab1Limit: card.slabs[0].upToOrder ?? 25,
       slab1RatePaise: card.slabs[0].ratePaise,
       slab2RatePaise: (card.slabs[1] ?? card.slabs[0]).ratePaise,
-      status: 'DRAFT - not approved',
+      status: label,
       generatedAt: new Date(),
       tripsWithoutEarnings: withoutEarnings,
     });
@@ -32,7 +34,7 @@ export async function GET(req: Request) {
     return new Response(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="RiderX-payroll-${cycle.start}-to-${cycle.end}-DRAFT.xlsx"`,
+        'Content-Disposition': `attachment; filename="RiderX-payroll-${cycle.start}-to-${cycle.end}-${ap ? 'APPROVED' : 'DRAFT'}.xlsx"`,
         'Cache-Control': 'no-store',
       },
     });

@@ -1,8 +1,6 @@
 import { supabaseServer } from '@/lib/supabase-server';
-import { loadWeekTrips, loadBankDetails, loadRiderNames, loadSetting, resolveWeekStart } from '@/lib/week-data';
-import { loadRateCard } from '@/lib/rate-card';
+import { loadBankDetails, loadSetting, resolveWeekStart } from '@/lib/week-data';
 import { cycleFor } from '@/src/engine/calendar';
-import { buildWeekly } from '@/src/engine/weekly';
 import { buildBankFile } from '@/src/export/bankFile';
 
 export const dynamic = 'force-dynamic';
@@ -19,16 +17,19 @@ export async function GET(req: Request) {
   const debit = await loadSetting(sb, 'bank_debit_account');
   if (!debit) return new Response('Set the company debit account number in Bank Settings first', { status: 400 });
 
-  const [{ trips }, { card }] = await Promise.all([loadWeekTrips(sb, cycle.start, cycle.end), loadRateCard(sb, start)]);
-  const weekly = buildWeekly(trips, cycle, card.slabs[0].upToOrder ?? 25);
-  const feIds = weekly.map((w) => w.feId);
-  const [bank, names] = await Promise.all([loadBankDetails(sb, feIds), loadRiderNames(sb, feIds)]);
-
-  const payable = weekly.filter((w) => w.grossPaise > 0 && names.has(w.feId));
-  const missing = payable.filter((w) => !bank.has(w.feId));
-  const payments = payable.filter((w) => bank.has(w.feId)).map((w) => {
-    const b = bank.get(w.feId)!;
-    return { feId: w.feId, name: b.holder, accountNumber: b.account, ifsc: b.ifsc, amountPaise: w.grossPaise, remarks: `RiderX payout ${cycle.start} to ${cycle.end}` };
+  // The bank file uses the frozen, approved figures only.
+  const { data: cyc } = await sb.from('payout_cycles').select('id, status').eq('period_start', cycle.start).maybeSingle();
+  if (!cyc) return new Response('Approve this week\'s payroll first. The bank file is built from approved figures only.', { status: 400 });
+  const { data: payouts } = await sb.from('rider_payouts').select('rider_id, net_payable_paise').eq('payout_cycle_id', cyc.id);
+  const { data: accts } = await sb.from('rider_platform_accounts').select('rider_id, platform_rider_id').eq('platform', 'zomato').in('rider_id', (payouts ?? []).map((p) => p.rider_id as string));
+  const feByRider = new Map((accts ?? []).map((a) => [a.rider_id as string, a.platform_rider_id as string]));
+  const bank = await loadBankDetails(sb, [...feByRider.values()]);
+  const payable = (payouts ?? []).filter((p) => Number(p.net_payable_paise) > 0);
+  const missing = payable.filter((p) => !bank.has(feByRider.get(p.rider_id as string) ?? ''));
+  const payments = payable.filter((p) => bank.has(feByRider.get(p.rider_id as string) ?? '')).map((p) => {
+    const fe = feByRider.get(p.rider_id as string)!;
+    const b = bank.get(fe)!;
+    return { feId: fe, name: b.holder, accountNumber: b.account, ifsc: b.ifsc, amountPaise: Number(p.net_payable_paise), remarks: `RiderX payout ${cycle.start} to ${cycle.end}` };
   });
   if (!payments.length) return new Response('No rider has complete bank details with an amount to pay', { status: 400 });
 
@@ -38,13 +39,13 @@ export async function GET(req: Request) {
   try {
     const { buffer, totalPaise, count } = await buildBankFile({ payments, debitAccount: debit, valueDate });
     await sb.from('audit_logs').insert({
-      actor_id: auth.user.id, action: 'payroll.bank_file_draft', entity_type: 'payout_cycle', entity_id: cycle.start,
-      after_values: { riders: count, total_paise: totalPaise, skipped_missing_bank_details: missing.map((m) => m.feId) },
+      actor_id: auth.user.id, action: 'payroll.bank_file', entity_type: 'payout_cycle', entity_id: cycle.start,
+      after_values: { riders: count, total_paise: totalPaise, skipped_missing_bank_details: missing.map((m) => feByRider.get(m.rider_id as string)) },
     });
     return new Response(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="RiderX-bank-file-${cycle.start}-DRAFT.xlsx"`,
+        'Content-Disposition': `attachment; filename="RiderX-bank-file-${cycle.start}.xlsx"`,
         'Cache-Control': 'no-store',
       },
     });
