@@ -18,9 +18,9 @@ export function WeeklyBars({ bars }: { bars: Bar[] }) {
     <>
       <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Zomato payout and rider earnings by week">
         <defs>
-          <linearGradient id="gViolet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#B9A9FF" stopOpacity=".7" /><stop offset="1" stopColor="#6F5BEA" stopOpacity=".28" /></linearGradient>
-          <linearGradient id="gVioletHi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#E4DCFF" /><stop offset="1" stopColor="#A18CFF" /></linearGradient>
-          <linearGradient id="gLime" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#CDF56E" /><stop offset="1" stopColor="#7FE6AA" /></linearGradient>
+          <linearGradient id="gViolet" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#B26A8C" stopOpacity=".85" /><stop offset="1" stopColor="#522B5B" stopOpacity=".35" /></linearGradient>
+          <linearGradient id="gVioletHi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#E9A8B8" /><stop offset="1" stopColor="#B26A8C" /></linearGradient>
+          <linearGradient id="gLime" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#FBE4D8" /><stop offset="1" stopColor="#DFB6B2" /></linearGradient>
         </defs>
         {[0.5, 1].map((f) => <line key={f} x1={padL} x2={W - padL} y1={y(max * f)} y2={y(max * f)} stroke="rgba(255,255,255,.06)" strokeDasharray="3 5" />)}
         {bars.map((b, i) => {
@@ -33,14 +33,14 @@ export function WeeklyBars({ bars }: { bars: Bar[] }) {
               <rect x={cx - bw / 2} y={top} width={bw} height={H - padB - top} rx="9" fill={isLast ? 'url(#gVioletHi)' : 'url(#gViolet)'} />
               <rect x={cx - bw / 2 + 5} y={rtop} width={bw - 10} height={Math.max(0, H - padB - rtop)} rx="5" fill="url(#gLime)" opacity={isLast ? 1 : 0.8} />
               {isLast
-                ? <g><rect x={cx - 30} y={top - 28} width="60" height="22" rx="11" fill="rgba(20,22,48,.92)" stroke="rgba(255,255,255,.18)" /><text x={cx} y={top - 13} textAnchor="middle" style={{ fill: '#fff', fontWeight: 700 }}>{short(b.revenuePaise)}</text></g>
+                ? <g><rect x={cx - 30} y={top - 28} width="60" height="22" rx="11" fill="rgba(25,0,25,.92)" stroke="rgba(251,228,216,.25)" /><text x={cx} y={top - 13} textAnchor="middle" style={{ fill: '#fff', fontWeight: 700 }}>{short(b.revenuePaise)}</text></g>
                 : <text x={cx} y={top - 7} textAnchor="middle">{short(b.revenuePaise)}</text>}
               <text x={cx} y={H - 9} textAnchor="middle">{b.label}</text>
             </g>
           );
         })}
       </svg>
-      <div className="legend"><span><i style={{ background: '#A18CFF' }} />Zomato payout</span><span><i style={{ background: '#7FE6AA' }} />Rider earnings</span></div>
+      <div className="legend"><span><i style={{ background: '#B26A8C' }} />Zomato payout</span><span><i style={{ background: '#FBE4D8' }} />Rider earnings</span></div>
     </>
   );
 }
