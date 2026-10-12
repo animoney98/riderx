@@ -24,7 +24,8 @@ const LIVE = [
   { href: '/audit-log', label: 'Audit Log', icon: 'audit' },
   { href: '/settings', label: 'Bank Settings', icon: 'bank' },
 ];
-const NOT_YET = ['Orders', 'Payout Management', 'Financials & Profit', 'Reports & Exports', 'User & Access Management'];
+const ADMIN_ONLY = [{ href: '/users', label: 'User & Access', icon: 'users' }];
+const NOT_YET = ['Orders', 'Payout Management', 'Financials & Profit', 'Reports & Exports'];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const sb = await supabaseServer();
@@ -41,6 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <nav className="side" aria-label="Main">
         <div className="brand">Rider<span>X</span></div>
         {LIVE.map((n) => <NavLink key={n.href} href={n.href} label={n.label} icon={n.icon} />)}
+        {profile?.active && profile.role === 'super_admin' && ADMIN_ONLY.map((n) => <NavLink key={n.href} href={n.href} label={n.label} icon={n.icon} />)}
         <div className="sep" />
         {NOT_YET.map((n) => <div key={n} className="soon"><Icon name="soon" />{n}<small>Not built yet</small></div>)}
         <div className="me">
