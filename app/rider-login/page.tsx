@@ -29,10 +29,10 @@ async function pinLogin(formData: FormData) {
     const hits = (data ?? []).filter((r) => last10(r.phone as string) === id!.value);
     if (hits.length === 1) riderId = hits[0].id as string;
   }
-  if (!riderId) redirect(WRONG);
+  if (!riderId) { console.error('rider-login: no single rider found for', id!.kind); redirect(WRONG); }
   const sb = await supabaseServer();
   const { error } = await sb.auth.signInWithPassword({ email: riderEmail(riderId!), password: pin });
-  if (error) redirect(WRONG);
+  if (error) { console.error('rider-login: password check failed:', error.message); redirect(WRONG); }
   redirect('/rider');
 }
 
