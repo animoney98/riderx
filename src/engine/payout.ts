@@ -17,6 +17,11 @@ export interface RateCard {
   rainBonusPaisePerOrder: number;
   /** Festival bonus per order (0 when no festival). */
   festivalBonusPaisePerOrder: number;
+  /**
+   * How many orders of a batched trip earn the base rate. RiderX pays one base + the batch bonus
+   * (50 + 30 = 80), so the default is 1. Both orders still count toward the daily order total.
+   */
+  batchedTripBaseOrders?: number;
 }
 
 export const DEFAULT_RATE_CARD: RateCard = {
@@ -31,6 +36,7 @@ export const DEFAULT_RATE_CARD: RateCard = {
   batchBonusPaise: 3000,
   rainBonusPaisePerOrder: 0,
   festivalBonusPaisePerOrder: 0,
+  batchedTripBaseOrders: 1,
 };
 
 export interface Trip {
@@ -92,7 +98,7 @@ export function validateRateCard(card: RateCard): void {
 /**
  * Calculates earnings for every trip. Order within a rider-day is
  * deterministic: completedAt, then tripId. A batched trip consumes
- * `ordersInTrip` ranks, each paid at the slab rate for its rank.
+ * `ordersInTrip` ranks, but earns the base rate only for its first `batchedTripBaseOrders` orders (default 1), plus the batch bonus.
  */
 export function calculateTrips(trips: Trip[], card: RateCard): TripEarning[] {
   validateRateCard(card);
@@ -116,8 +122,8 @@ export function calculateTrips(trips: Trip[], card: RateCard): TripEarning[] {
       for (let i = 0; i < t.ordersInTrip; i++) {
         rank += 1;
         const r = rateForRank(card, rank);
-        base += r;
         slabs.set(r, (slabs.get(r) ?? 0) + 1);
+        if (i < (card.batchedTripBaseOrders ?? 1) || t.ordersInTrip === 1) base += r;
       }
       const totalKm100 = t.pickupKm100 + t.dropKm100;
       const extraKm100 = Math.max(0, totalKm100 - card.includedKm100);

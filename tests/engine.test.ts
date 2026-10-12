@@ -23,7 +23,9 @@ describe('payout engine (spec examples)', () => {
   it('30 orders at 4 km = ₹1,550', () => expect(total(mk(30))).toBe(155000));
   it('exactly 6 km has no extra distance', () => expect(total(mk(1, {}, 600))).toBe(5000));
   it('8 km order = ₹50 + ₹10', () => expect(total(mk(1, {}, 800))).toBe(6000));
-  it('8 km batched trip: 2 orders ₹100 + ₹10 + ₹30', () => expect(total(mk(1, { ordersInTrip: 2 }, 800))).toBe(14000));
+  it('8 km batched trip: one base ₹50 + ₹10 distance + ₹30 batch = ₹90', () => expect(total(mk(1, { ordersInTrip: 2 }, 800))).toBe(9000));
+  it('plain batched trip pays the rider ₹80 (₹50 + ₹30)', () => expect(total(mk(1, { ordersInTrip: 2 }, 600))).toBe(8000));
+  it('batched trip still counts as 2 orders', () => expect(calculateTrips(mk(1, { ordersInTrip: 2 }), DEFAULT_RATE_CARD)[0].orders).toBe(2));
   it('7.5 km = ₹57.50', () => expect(total(mk(1, {}, 750))).toBe(5750));
   it('distance is pickup + drop combined (3.74 + 2.46 = 6.20 -> 0.20 km = ₹1)', () => {
     const [e] = calculateTrips(mk(1, { pickupKm100: 246, dropKm100: 374 }), DEFAULT_RATE_CARD);
@@ -33,7 +35,7 @@ describe('payout engine (spec examples)', () => {
   it('batched trip straddling the 25/26 boundary uses each order rank', () => {
     const t = [...mk(24), ...mk(1, { tripId: 'Z', ordersInTrip: 2, completedAt: '2026-10-12T20:00:00' })];
     const e = calculateTrips(t, DEFAULT_RATE_CARD).find((x) => x.tripId === 'Z')!;
-    expect(e.basePaise).toBe(5000 + 6000);
+    expect(e.basePaise).toBe(5000); // one base, at the rate of the trip's first order
     expect(e.firstRank).toBe(25);
     expect(e.lastRank).toBe(26);
   });
