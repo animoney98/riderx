@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
+import { AuthShell } from '../auth-shell';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { last10, parseIdentifier, riderEmail } from '@/src/engine/riderLogin';
 
@@ -58,36 +59,36 @@ async function verifyCode(formData: FormData) {
 
 export default async function RiderLogin({ searchParams }: { searchParams: Promise<{ error?: string; step?: string; phone?: string; mode?: string }> }) {
   const { error, step, phone, mode } = await searchParams;
-  return (
-    <main className="login">
-      <div className="brand" style={{ padding: 0, marginBottom: 20 }}>Rider<span>X</span></div>
-      {step === 'code' && phone ? (
-        <form action={verifyCode} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <h1 style={{ fontSize: 24 }}>Enter the code</h1>
-          <p className="note">We sent a 6-digit code by SMS to {phone}.</p>
-          {error && <div className="alert bad" role="alert">{error}</div>}
+  if (step === 'code' && phone) {
+    return (
+      <AuthShell title="Enter the code" subtitle={`We sent a 6-digit code by SMS to ${phone}.`} error={error}>
+        <form action={verifyCode} className="authform">
           <input type="hidden" name="phone" value={phone} />
-          <label>Code<input name="code" required inputMode="numeric" autoComplete="one-time-code" maxLength={8} /></label>
+          <label>Code<input name="code" required inputMode="numeric" autoComplete="one-time-code" maxLength={8} placeholder="6-digit code" /></label>
           <button type="submit">Sign in</button>
         </form>
-      ) : mode !== 'sms' ? (
-        <form action={pinLogin} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <h1 style={{ fontSize: 24 }}>Rider sign in</h1>
-          {error && <div className="alert bad" role="alert">{error}</div>}
+      </AuthShell>
+    );
+  }
+  if (mode !== 'sms') {
+    return (
+      <AuthShell title="Rider sign in" subtitle="Enter your FE ID or mobile number and your 6-digit PIN." error={error}
+        footer={<>Forgot your PIN? Ask RiderX to set a new one.<br /><a href="/rider-login?mode=sms">Sign in with an SMS code instead</a></>}>
+        <form action={pinLogin} className="authform">
           <label>FE ID or mobile number<input name="who" required autoComplete="username" placeholder="FE11568286 or 98765 43210" /></label>
-          <label>6-digit PIN<input name="pin" type="password" required inputMode="numeric" maxLength={6} autoComplete="current-password" /></label>
+          <label>6-digit PIN<input name="pin" type="password" required inputMode="numeric" maxLength={6} autoComplete="current-password" placeholder="••••••" /></label>
           <button type="submit">Sign in</button>
-          <p className="note">Forgot your PIN? Ask RiderX to set a new one. <a href="/rider-login?mode=sms">Sign in with an SMS code instead</a></p>
         </form>
-      ) : (
-        <form action={sendCode} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <h1 style={{ fontSize: 24 }}>Rider sign in</h1>
-          {error && <div className="alert bad" role="alert">{error}</div>}
-          <label>Mobile number<input name="phone" required inputMode="tel" autoComplete="tel" placeholder="98765 43210" /></label>
-          <button type="submit">Send code</button>
-          <p className="note">Use the number RiderX has on file for you. <a href="/rider-login">Sign in with a PIN instead</a></p>
-        </form>
-      )}
-    </main>
+      </AuthShell>
+    );
+  }
+  return (
+    <AuthShell title="Rider sign in" subtitle="We will send a code to your mobile number." error={error}
+      footer={<>Use the number RiderX has on file for you.<br /><a href="/rider-login">Sign in with a PIN instead</a></>}>
+      <form action={sendCode} className="authform">
+        <label>Mobile number<input name="phone" required inputMode="tel" autoComplete="tel" placeholder="98765 43210" /></label>
+        <button type="submit">Send code</button>
+      </form>
+    </AuthShell>
   );
 }
