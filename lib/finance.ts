@@ -24,3 +24,23 @@ export async function loadReceipts(sb: SupabaseClient, periodStart: string) {
   const { data } = await sb.from('zomato_receipts').select('id, amount_paise, received_on, reference, notes').eq('period_start', periodStart).order('received_on');
   return (data ?? []).map((r) => ({ id: r.id as string, amountPaise: Number(r.amount_paise), receivedOn: r.received_on as string, reference: r.reference as string | null, notes: r.notes as string | null }));
 }
+
+import type { RiderDay } from '@/src/engine/targets';
+
+/** One row per rider per day: trips, orders, batched trips and what the Zomato file paid. */
+export async function loadRiderDays(sb: SupabaseClient, start: string, end: string): Promise<RiderDay[]> {
+  const m = new Map<string, RiderDay>();
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await sb.from('trips').select('id, fe_id, operational_date, orders_in_trip, zomato_pay_paise')
+      .gte('operational_date', start).lte('operational_date', end).order('id').range(from, from + 999);
+    if (error) throw new Error(error.message);
+    for (const r of data ?? []) {
+      const key = `${r.fe_id}|${r.operational_date}`;
+      const d = m.get(key) ?? { feId: r.fe_id as string, date: r.operational_date as string, orders: 0, trips: 0, batchedTrips: 0, actualPaise: 0 };
+      d.orders += r.orders_in_trip as number; d.trips += 1; d.batchedTrips += (r.orders_in_trip as number) > 1 ? 1 : 0; d.actualPaise += Number(r.zomato_pay_paise);
+      m.set(key, d);
+    }
+    if (!data || data.length < 1000) break;
+  }
+  return [...m.values()];
+}

@@ -17,6 +17,7 @@ const LIVE = [
   { href: '/daily-earnings', label: 'Daily Earnings' },
   { href: '/payroll', label: 'Salary & Payroll' },
   { href: '/reconciliation', label: 'Zomato Reconciliation' },
+  { href: '/daily-targets', label: 'Zomato Daily Targets' },
   { href: '/imports', label: 'Imports & Data Quality' },
   { href: '/rate-cards', label: 'Rate Cards' },
   { href: '/settings', label: 'Bank Settings' },
