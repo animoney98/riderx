@@ -57,9 +57,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
       </div>
       <WeekPicker path="/payroll" start={cycle.start} payDate={cycle.payDate} />
       <div>
-        <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: '#141414' }} href={`/payroll/export?week=${cycle.start}`}>Download Payroll Excel (draft)</a>{' '}
-        <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: '#141414', marginLeft: 8 }} href={`/payroll/bank-file?week=${cycle.start}`}>Download Bank file</a>
-        {approvedCycle && <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: '#141414', marginLeft: 8 }} href={`/payroll/payments?week=${cycle.start}`}>Record payments</a>}
+        <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }} href={`/payroll/export?week=${cycle.start}`}>Download Payroll Excel (draft)</a>{' '}
+        <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', marginLeft: 8 }} href={`/payroll/bank-file?week=${cycle.start}`}>Download Bank file</a>
+        {approvedCycle && <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', marginLeft: 8 }} href={`/payroll/payments?week=${cycle.start}`}>Record payments</a>}
         <p className="note" style={{ marginTop: 8 }}>
           {!approvedCycle && <>The bank file is available after you approve the week. </>}Bank file: {payable.length - noBank.length} of {payable.length} riders ready, {formatINR(payable.filter((r) => bank.has(r.feId)).reduce((s, r) => s + r.grossPaise, 0))}.
           {!debit && <> The company debit account is not set — <a href="/settings">add it in Bank Settings</a>.</>}
@@ -126,7 +126,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                 </tr>
               ))}
               {rows.length > 0 && (
-                <tr style={{ fontWeight: 800, background: '#F6F5F3' }}>
+                <tr className="total">
                   <td colSpan={3}>Total ({rows.length} riders)</td>
                   {[0, 1, 2, 3, 4, 5, 6].map((d) => <td key={d} className="n">{sum((r) => r.ordersByDay[d]) || '–'}</td>)}
                   <td className="n">{sum((r) => r.orders)}</td><td className="n">{sum((r) => r.slab1Orders)}</td><td className="n">{sum((r) => r.slab2Orders)}</td><td className="n">{formatINR(sum((r) => r.basePaise))}</td>

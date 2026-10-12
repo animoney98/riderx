@@ -31,7 +31,7 @@ export default async function RiderLogin({ searchParams }: { searchParams: Promi
   const { error, step, phone } = await searchParams;
   return (
     <main className="login">
-      <div className="brand" style={{ color: '#141414', padding: 0, marginBottom: 20 }}>Rider<span>X</span></div>
+      <div className="brand" style={{ padding: 0, marginBottom: 20 }}>Rider<span>X</span></div>
       {step === 'code' && phone ? (
         <form action={verifyCode} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <h1 style={{ fontSize: 24 }}>Enter the code</h1>

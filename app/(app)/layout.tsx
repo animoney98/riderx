@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { NavLink } from './nav-link';
+import { Icon } from './icons';
 
 async function logout() {
   'use server';
@@ -12,16 +13,16 @@ async function logout() {
 
 // Only pages that really work are links. The rest are shown as not built yet.
 const LIVE = [
-  { href: '/overview', label: 'Overview' },
-  { href: '/riders', label: 'Riders' },
-  { href: '/daily-earnings', label: 'Daily Earnings' },
-  { href: '/payroll', label: 'Salary & Payroll' },
-  { href: '/reconciliation', label: 'Zomato Reconciliation' },
-  { href: '/daily-targets', label: 'Zomato Daily Targets' },
-  { href: '/imports', label: 'Imports & Data Quality' },
-  { href: '/rate-cards', label: 'Rate Cards' },
-  { href: '/audit-log', label: 'Audit Log' },
-  { href: '/settings', label: 'Bank Settings' },
+  { href: '/overview', label: 'Overview', icon: 'overview' },
+  { href: '/riders', label: 'Riders', icon: 'riders' },
+  { href: '/daily-earnings', label: 'Daily Earnings', icon: 'daily' },
+  { href: '/payroll', label: 'Salary & Payroll', icon: 'payroll' },
+  { href: '/reconciliation', label: 'Zomato Reconciliation', icon: 'recon' },
+  { href: '/daily-targets', label: 'Zomato Daily Targets', icon: 'target' },
+  { href: '/imports', label: 'Imports & Data Quality', icon: 'imports' },
+  { href: '/rate-cards', label: 'Rate Cards', icon: 'rates' },
+  { href: '/audit-log', label: 'Audit Log', icon: 'audit' },
+  { href: '/settings', label: 'Bank Settings', icon: 'bank' },
 ];
 const NOT_YET = ['Orders', 'Payout Management', 'Financials & Profit', 'Reports & Exports', 'User & Access Management'];
 
@@ -38,8 +39,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="shell">
       <nav className="side" aria-label="Main">
         <div className="brand">Rider<span>X</span></div>
-        {LIVE.map((n) => <NavLink key={n.href} href={n.href} label={n.label} />)}
-        {NOT_YET.map((n) => <div key={n} className="soon">{n}<small>Not built yet</small></div>)}
+        {LIVE.map((n) => <NavLink key={n.href} href={n.href} label={n.label} icon={n.icon} />)}
+        <div className="sep" />
+        {NOT_YET.map((n) => <div key={n} className="soon"><Icon name="soon" />{n}<small>Not built yet</small></div>)}
         <div className="me">
           {profile ? `${profile.full_name} · ${profile.role}` : auth.user.email}
           <form action={logout}><button className="ghost" style={{ marginTop: 8, minHeight: 36, width: '100%' }}>Sign out</button></form>

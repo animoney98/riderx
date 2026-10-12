@@ -16,7 +16,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const { error } = await searchParams;
   return (
     <main className="login">
-      <div className="brand" style={{ color: '#141414', padding: 0, marginBottom: 20 }}>Rider<span>X</span></div>
+      <div className="brand" style={{ padding: 0, marginBottom: 20 }}>Rider<span>X</span></div>
       <form action={login} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <h1 style={{ fontSize: 24 }}>Sign in</h1>
         {error && <div className="alert bad" role="alert">Email or password is incorrect.</div>}

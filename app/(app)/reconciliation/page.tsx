@@ -62,12 +62,12 @@ export default async function ReconciliationPage({ searchParams }: { searchParam
               <tr key={r.feId}>
                 <td><b>{names.get(r.feId) || <span className="pill p-warn">Not registered</span>}</b></td><td>{r.feId}</td><td className="n">{r.orders}</td>
                 <td className="n">{formatINR(r.revenuePaise)}</td><td className="n">{formatINR(r.riderPaise)}</td>
-                <td className="n" style={{ color: r.marginPaise < 0 ? '#B3261E' : undefined }}>{formatINR(r.marginPaise)}</td>
+                <td className={r.marginPaise < 0 ? 'n neg' : 'n'}>{formatINR(r.marginPaise)}</td>
                 <td className="n">{r.orders ? formatINR(Math.round(r.marginPaise / r.orders)) : '—'}</td>
               </tr>
             ))}
             {fin.rows.length > 0 && (
-              <tr style={{ fontWeight: 800, background: '#F6F5F3' }}>
+              <tr className="total">
                 <td colSpan={2}>Total</td><td className="n">{t.orders}</td><td className="n">{formatINR(t.revenuePaise)}</td><td className="n">{formatINR(t.riderPaise)}</td>
                 <td className="n">{formatINR(t.marginPaise)}</td><td className="n">{t.orders ? formatINR(Math.round(t.marginPaise / t.orders)) : '—'}</td>
               </tr>

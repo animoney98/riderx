@@ -9,12 +9,12 @@ export function WeekPicker({ path, start, payDate }: { path: string; start: stri
   return (
     <div className="card" style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'center', justifyContent: 'space-between' }}>
       <div className="row" style={{ alignItems: 'center' }}>
-        <Link className="btn" style={{ display: 'inline-flex', alignItems: 'center', background: '#fff', border: '1px solid #CFCBC4' }} href={`${path}?week=${addDays(start, -7)}`} aria-label="Previous week">&larr;</Link>
+        <Link className="btn ghost" style={{ display: 'inline-flex', alignItems: 'center' }} href={`${path}?week=${addDays(start, -7)}`} aria-label="Previous week">&larr;</Link>
         <div>
           <div className="note">Week (Monday to Sunday)</div>
           <b style={{ fontSize: 18 }}>{label(start)} to {label(end)}</b>
         </div>
-        <Link className="btn" style={{ display: 'inline-flex', alignItems: 'center', background: '#fff', border: '1px solid #CFCBC4' }} href={`${path}?week=${addDays(start, 7)}`} aria-label="Next week">&rarr;</Link>
+        <Link className="btn ghost" style={{ display: 'inline-flex', alignItems: 'center' }} href={`${path}?week=${addDays(start, 7)}`} aria-label="Next week">&rarr;</Link>
       </div>
       {payDate && (
         <div>

@@ -210,7 +210,7 @@ export default async function DailyTargetsPage({ searchParams }: { searchParams:
                 <tr key={r.feId}>
                   <td><b>{names.get(r.feId) || '—'}</b></td><td>{r.feId}</td><td className="n">{r.orders}</td><td className="n">{r.trips}</td>
                   <td>{r.tierMin ? `${r.tierMin}+ orders` : 'None'}</td><td className="n">{formatINR(r.ratePaise)}</td><td className="n">{formatINR(r.expectedPaise)}</td>
-                  <td className="n" style={{ color: r.differencePaise !== 0 ? '#B3261E' : undefined }}>{formatINR(r.actualPaise)}</td><td className="n"><b>{formatINR(r.extraPaise)}</b></td>
+                  <td className={r.differencePaise !== 0 ? 'n neg' : 'n'}>{formatINR(r.actualPaise)}</td><td className="n"><b>{formatINR(r.extraPaise)}</b></td>
                 </tr>
               ))}
               {!sameDayRows(t.date).length && <tr><td colSpan={9} className="note">No trips imported for this day yet.</td></tr>}

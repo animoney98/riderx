@@ -55,7 +55,7 @@ export default async function RiderHome({ searchParams }: { searchParams: Promis
   const masked = det?.bank_account_number ? `••••${det.bank_account_number.slice(-4)}` : null;
   return (
     <main className="login" style={{ alignItems: 'stretch', maxWidth: 520 }}>
-      <div className="brand" style={{ color: '#141414', padding: 0, marginBottom: 12 }}>Rider<span>X</span></div>
+      <div className="brand" style={{ padding: 0, marginBottom: 12 }}>Rider<span>X</span></div>
       <h1 style={{ fontSize: 24 }}>Hello, {rider?.full_name}</h1>
       {error && <div className="alert bad" role="alert">{error}</div>}
       {saved && <div className="alert ok">Saved. RiderX will check your details before the next payment.</div>}

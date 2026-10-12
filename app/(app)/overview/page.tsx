@@ -3,6 +3,7 @@ import { supabaseServer } from '@/lib/supabase-server';
 import { resolveWeekStart, loadRiderNames, loadBankDetails } from '@/lib/week-data';
 import { loadWeekFinance, loadReceipts } from '@/lib/finance';
 import { loadPayouts } from '@/lib/payments';
+import { WeeklyBars } from './chart';
 import { addDays, cycleFor } from '@/src/engine/calendar';
 import { formatINR } from '@/src/engine/payout';
 
@@ -56,6 +57,7 @@ export default async function Overview() {
 
       <section className="card">
         <h2>Last 8 weeks</h2>
+        <WeeklyBars bars={data.filter((d) => d.fin.rows.length).reverse().map((d) => ({ label: d.c.start.slice(5), revenuePaise: d.fin.totals.revenuePaise, riderPaise: d.fin.totals.riderPaise }))} />
         <div className="tbl"><table>
           <thead><tr><th>Week</th><th className="n">Orders</th><th className="n">Zomato payout</th><th className="n">Rider earnings</th><th className="n">Margin</th><th>Payroll</th><th className="n">Rider pay outstanding</th><th className="n">Zomato to receive</th></tr></thead>
           <tbody>
