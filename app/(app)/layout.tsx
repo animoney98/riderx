@@ -26,6 +26,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!auth.user) redirect('/login');
   const { data: profile } = await sb.from('profiles').select('full_name, role, active').eq('id', auth.user.id).maybeSingle();
 
+  // A rider (phone login, no staff profile) belongs on his own page.
+  if (!profile && auth.user.phone) redirect('/rider');
+
   return (
     <div className="shell">
       <nav className="side" aria-label="Main">

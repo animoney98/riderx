@@ -37,7 +37,7 @@ export default async function RidersPage({ searchParams }: { searchParams: Promi
   const sb = await supabaseServer();
   const { data: riders } = await sb
     .from('riders')
-    .select('id, full_name, phone, status, onboarding_date, rider_platform_accounts(platform_rider_id), rider_payment_details(bank_account_number)')
+    .select('id, full_name, phone, status, onboarding_date, rider_platform_accounts(platform_rider_id), rider_payment_details(bank_account_number, verified_at)')
     .order('full_name');
 
   return (
@@ -73,7 +73,11 @@ export default async function RidersPage({ searchParams }: { searchParams: Promi
                   <td>{r.phone ?? '—'}</td>
                   <td><span className="pill p-ok">{r.status}</span></td>
                   <td>{r.onboarding_date ?? '—'}</td>
-                  <td>{(r.rider_payment_details as unknown as { bank_account_number: string | null } | { bank_account_number: string | null }[] | null) && [r.rider_payment_details].flat().some((d) => d && (d as { bank_account_number: string | null }).bank_account_number) ? <span className="pill p-ok">Added</span> : <span className="pill p-warn">Missing</span>}</td>
+                  <td>{(() => {
+                    const d = [r.rider_payment_details].flat().find((x) => x) as { bank_account_number: string | null; verified_at: string | null } | undefined;
+                    if (!d?.bank_account_number) return <span className="pill p-warn">Missing</span>;
+                    return d.verified_at ? <span className="pill p-ok">Checked</span> : <span className="pill p-warn">Needs check</span>;
+                  })()}</td>
                   <td><Link href={`/riders/${r.id}`}>Edit</Link></td>
                 </tr>
               ))}

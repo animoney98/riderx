@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Every page except /login requires a signed-in user.
+// Every page except /login and /rider-login requires a signed-in user.
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: req });
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
@@ -15,7 +15,11 @@ export async function middleware(req: NextRequest) {
     },
   });
   const { data } = await supabase.auth.getUser();
-  const onLogin = req.nextUrl.pathname.startsWith('/login');
+  const path = req.nextUrl.pathname;
+  const onRiderLogin = path.startsWith('/rider-login');
+  const onLogin = path.startsWith('/login');
+  if (onRiderLogin) return data.user ? NextResponse.redirect(new URL('/rider', req.url)) : res;
+  if (!data.user && path.startsWith('/rider')) return NextResponse.redirect(new URL('/rider-login', req.url));
   if (!data.user && !onLogin) return NextResponse.redirect(new URL('/login', req.url));
   if (data.user && onLogin) return NextResponse.redirect(new URL('/riders', req.url));
   return res;
