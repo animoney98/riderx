@@ -1,3 +1,7 @@
 node_modules
 .env*
+!.env.example
 *.xlsx
+.next
+next-env.d.ts
+tsconfig.tsbuildinfo

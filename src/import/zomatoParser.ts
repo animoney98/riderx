@@ -1,7 +1,7 @@
 // Parses Zomato's per-trip payout sheet (columns as seen in the sample file).
 // Nothing here writes to a database; it returns rows plus a validation report.
 import * as XLSX from 'xlsx';
-import type { Trip } from '../engine/payout.js';
+import type { Trip } from '../engine/payout';
 
 export interface ZomatoRow {
   tripId: string;

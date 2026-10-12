@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { parseZomatoWorkbook, toTrips } from '../src/import/zomatoParser.js';
-import { calculateTrips, DEFAULT_RATE_CARD } from '../src/engine/payout.js';
-import { cycleFor } from '../src/engine/calendar.js';
+import { parseZomatoWorkbook, toTrips } from '../src/import/zomatoParser';
+import { calculateTrips, DEFAULT_RATE_CARD } from '../src/engine/payout';
+import { cycleFor } from '../src/engine/calendar';
 
 // Real sample is not committed. Point ZOMATO_SAMPLE at it to run these.
 const sample = process.env.ZOMATO_SAMPLE;

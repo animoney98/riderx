@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calculateTrips, dailyTotals, DEFAULT_RATE_CARD, formatINR, type Trip } from '../src/engine/payout.js';
-import { cycleFor, weekdayIndex } from '../src/engine/calendar.js';
+import { calculateTrips, dailyTotals, DEFAULT_RATE_CARD, formatINR, type Trip } from '../src/engine/payout';
+import { cycleFor, weekdayIndex } from '../src/engine/calendar';
 
 const mk = (n: number, over: Partial<Trip> = {}, km100 = 400): Trip[] =>
   Array.from({ length: n }, (_, i) => ({
