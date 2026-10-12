@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { supabaseServer } from '@/lib/supabase-server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
+import { pinProblem, riderEmail } from '@/src/engine/riderLogin';
 
 async function saveRider(formData: FormData) {
   'use server';
@@ -38,11 +40,44 @@ async function saveRider(formData: FormData) {
   back('saved=1');
 }
 
+/** Creates the rider's login, or resets his PIN. The PIN is typed by the admin and never stored or shown again. */
+async function setPin(formData: FormData) {
+  'use server';
+  const id = String(formData.get('id'));
+  const back = (q: string): never => redirect(`/riders/${id}?${q}`);
+  const pin = String(formData.get('pin') ?? '').trim();
+  const problem = pinProblem(pin);
+  if (problem) back(`error=${encodeURIComponent(problem)}`);
+  const sb = await supabaseServer();
+  const { data: auth } = await sb.auth.getUser();
+  const { data: me } = await sb.from('profiles').select('role, active').eq('id', auth.user?.id ?? '').maybeSingle();
+  if (!me?.active || !['super_admin', 'operations_manager', 'finance_manager'].includes(me.role)) back('error=Not+allowed');
+  const admin = supabaseAdmin();
+  if (!admin) back('error=Rider+logins+are+not+switched+on+yet.+Add+SUPABASE_SERVICE_ROLE_KEY+in+Vercel+(see+the+steps+I+sent)');
+  const { data: rider } = await sb.from('riders').select('id, user_id').eq('id', id).maybeSingle();
+  if (!rider) back('error=Rider+not+found');
+  const email = riderEmail(id);
+  let userId = rider!.user_id as string | null;
+  if (userId) {
+    const { error } = await admin!.auth.admin.updateUserById(userId, { email, password: pin, email_confirm: true });
+    if (error) back(`error=${encodeURIComponent('Could not set the PIN: ' + error.message)}`);
+  } else {
+    const { data, error } = await admin!.auth.admin.createUser({ email, password: pin, email_confirm: true, user_metadata: { rider_id: id } });
+    if (error || !data.user) back(`error=${encodeURIComponent('Could not create the login: ' + (error?.message ?? 'unknown'))}`);
+    userId = data.user!.id;
+    const { error: e2 } = await admin!.from('riders').update({ user_id: userId }).eq('id', id);
+    if (e2) back('error=Login+created+but+could+not+be+linked.+Try+again');
+  }
+  await sb.from('audit_logs').insert({ actor_id: auth.user?.id, action: 'rider.pin_set', entity_type: 'rider', entity_id: id });
+  revalidatePath(`/riders/${id}`);
+  back('saved=1');
+}
+
 export default async function RiderPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; saved?: string }> }) {
   const { id } = await params;
   const { error, saved } = await searchParams;
   const sb = await supabaseServer();
-  const { data: rider } = await sb.from('riders').select('id, full_name, phone, rider_platform_accounts(platform_rider_id)').eq('id', id).maybeSingle();
+  const { data: rider } = await sb.from('riders').select('id, full_name, phone, user_id, rider_platform_accounts(platform_rider_id)').eq('id', id).maybeSingle();
   if (!rider) notFound();
   const { data: det } = await sb.from('rider_payment_details').select('bank_account_holder, bank_account_number, bank_ifsc, bank_name, source, verified_at').eq('rider_id', id).maybeSingle();
   const fe = (rider.rider_platform_accounts as { platform_rider_id: string }[]).map((a) => a.platform_rider_id).join(', ');
@@ -71,6 +106,17 @@ export default async function RiderPage({ params, searchParams }: { params: Prom
         </div>
         <p className="note">Bank details are visible only to finance managers and admins. Check the account number twice: a wrong number sends the money to someone else.{det?.source === 'rider' && !det.verified_at ? ' The rider entered these himself. Check them with him, then click Save to approve them for the bank file.' : ''}</p>
         <button type="submit" style={{ marginTop: 12 }}>Save</button>
+      </form>
+
+      <form action={setPin} className="card" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <input type="hidden" name="id" value={rider.id} />
+        <h2>Rider login</h2>
+        <p className="note">The rider signs in at <b>/rider-login</b> with his FE ID or mobile number and this PIN, and sees his own earnings. {rider.user_id ? 'A login exists. Setting a PIN again resets it.' : 'No login yet.'}</p>
+        <div className="row">
+          <label>New 6-digit PIN<input name="pin" required inputMode="numeric" maxLength={6} autoComplete="off" /></label>
+          <button type="submit">{rider.user_id ? 'Reset PIN' : 'Create login'}</button>
+        </div>
+        <p className="note">Tell the rider his PIN in person or by call. It is not stored anywhere you can read it, so if he forgets it, set a new one.</p>
       </form>
     </>
   );

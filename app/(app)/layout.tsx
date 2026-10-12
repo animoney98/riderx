@@ -33,6 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { data: profile } = await sb.from('profiles').select('full_name, role, active').eq('id', auth.user.id).maybeSingle();
 
   // A rider (phone login, no staff profile) belongs on his own page.
+  if (!profile?.active && auth.user.email?.endsWith('@riders.riderx.app')) redirect('/rider');
   if (!profile && auth.user.phone) redirect('/rider');
 
   return (
