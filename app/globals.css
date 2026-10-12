@@ -33,6 +33,7 @@ input:focus,select:focus{outline:2px solid rgba(242,106,27,.7);outline-offset:1p
 input[type=checkbox]{accent-color:var(--orange)}
 select option{background:#1B1410;color:var(--ink)}
 button,.btn{min-height:44px;padding:0 22px;border:0;border-radius:14px;background:linear-gradient(135deg,var(--orange-2),var(--orange));color:#1A0E06;font:inherit;font-weight:800;cursor:pointer;box-shadow:0 8px 22px rgba(242,106,27,.3)}
+a.btn{display:inline-flex;align-items:center;align-self:flex-start;text-decoration:none}
 button:hover,.btn:hover{filter:brightness(1.08)}
 button.ghost,.btn.ghost{background:var(--card-hi);border:1px solid var(--field-line);color:var(--ink);font-weight:600;box-shadow:none}
 .row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}

@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { NavLink } from './nav-link';
-import { Icon } from './icons';
 
 async function logout() {
   'use server';
@@ -11,7 +10,7 @@ async function logout() {
   redirect('/login');
 }
 
-// Only pages that really work are links. The rest are shown as not built yet.
+// Only pages that really work are listed.
 const LIVE = [
   { href: '/overview', label: 'Overview', icon: 'overview' },
   { href: '/riders', label: 'Riders', icon: 'riders' },
@@ -21,11 +20,11 @@ const LIVE = [
   { href: '/daily-targets', label: 'Zomato Daily Targets', icon: 'target' },
   { href: '/imports', label: 'Imports & Data Quality', icon: 'imports' },
   { href: '/rate-cards', label: 'Rate Cards', icon: 'rates' },
+  { href: '/reports', label: 'Reports & Exports', icon: 'reports' },
   { href: '/audit-log', label: 'Audit Log', icon: 'audit' },
   { href: '/settings', label: 'Bank Settings', icon: 'bank' },
 ];
 const ADMIN_ONLY = [{ href: '/users', label: 'User & Access', icon: 'users' }];
-const NOT_YET = ['Orders', 'Payout Management', 'Financials & Profit', 'Reports & Exports'];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const sb = await supabaseServer();
@@ -43,8 +42,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="brand">Rider<span>X</span></div>
         {LIVE.map((n) => <NavLink key={n.href} href={n.href} label={n.label} icon={n.icon} />)}
         {profile?.active && profile.role === 'super_admin' && ADMIN_ONLY.map((n) => <NavLink key={n.href} href={n.href} label={n.label} icon={n.icon} />)}
-        <div className="sep" />
-        {NOT_YET.map((n) => <div key={n} className="soon"><Icon name="soon" />{n}<small>Not built yet</small></div>)}
         <div className="me">
           {profile ? `${profile.full_name} · ${profile.role}` : auth.user.email}
           <form action={logout}><button className="ghost" style={{ marginTop: 8, minHeight: 36, width: '100%' }}>Sign out</button></form>

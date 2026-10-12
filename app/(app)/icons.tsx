@@ -10,6 +10,7 @@ const P: Record<string, React.ReactNode> = {
   rates: <><path d="M4 12.5 12 4h7a1 1 0 0 1 1 1v7l-8.5 8.5a1.5 1.5 0 0 1-2 0L4 14.5a1.5 1.5 0 0 1 0-2z" /><circle cx="15.5" cy="8.5" r="1" /></>,
   bank: <><path d="M3 10 12 4l9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18" /></>,
   users: <><rect x="4" y="10.5" width="16" height="10" rx="3" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 15v2" /></>,
+  reports: <><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5" /><path d="M5 19h14" /></>,
   audit: <><path d="M7 3h8l4 4v14H7z" /><path d="M14 3v5h5M10 13h6M10 17h6" /></>,
   soon: <circle cx="12" cy="12" r="2" />,
 };

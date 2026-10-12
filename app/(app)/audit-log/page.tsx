@@ -20,12 +20,13 @@ const LABELS: Record<string, string> = {
   'zomato.target_create': 'Zomato daily target added',
   'zomato.target_update': 'Zomato daily target changed',
   'zomato.target_remove': 'Zomato daily target removed',
+  'report.download': 'Report or backup downloaded',
   'user.create': 'Team member added',
   'user.update': 'Team member role or status changed',
   'user.password_reset': 'Team member password reset',
   'settings.debit_account': 'Bank debit account changed',
 };
-const GROUPS: [string, string][] = [['', 'Everything'], ['import', 'Imports'], ['rider', 'Riders'], ['payroll', 'Payroll'], ['payment', 'Payments'], ['rate_card', 'Rates'], ['zomato', 'Zomato'], ['settings', 'Settings'], ['user', 'Team']];
+const GROUPS: [string, string][] = [['', 'Everything'], ['import', 'Imports'], ['rider', 'Riders'], ['payroll', 'Payroll'], ['payment', 'Payments'], ['rate_card', 'Rates'], ['zomato', 'Zomato'], ['settings', 'Settings'], ['user', 'Team'], ['report', 'Reports']];
 
 const when = (iso: string) => new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' });
 
