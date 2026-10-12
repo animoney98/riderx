@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   const week = new URL(req.url).searchParams.get('week') ?? undefined;
   const start = await resolveWeekStart(sb, week);
   const cycle = cycleFor(start);
-  const [{ trips, withoutEarnings }, { card }] = await Promise.all([loadWeekTrips(sb, cycle.start, cycle.end), loadRateCard(sb, start)]);
+  const [{ trips, withoutEarnings }, { card }] = await Promise.all([loadWeekTrips(sb, cycle.start, cycle.end), loadRateCard(sb, start, { standardOnly: true })]);
   const riders = await loadRiderInfo(sb, [...new Set(trips.map((t) => t.feId))]);
   const { data: ap } = await sb.from('payout_cycles').select('status').eq('period_start', cycle.start).maybeSingle();
   const label = ap ? 'APPROVED' : 'DRAFT - not approved';

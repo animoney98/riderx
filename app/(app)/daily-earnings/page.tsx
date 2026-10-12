@@ -14,7 +14,7 @@ export default async function DailyEarningsPage({ searchParams }: { searchParams
   const sb = await supabaseServer();
   const start = await resolveWeekStart(sb, sp.week);
   const end = addDays(start, 6);
-  const [{ trips, withoutEarnings }, { card }] = await Promise.all([loadWeekTrips(sb, start, end), loadRateCard(sb, start)]);
+  const [{ trips, withoutEarnings }, { card }] = await Promise.all([loadWeekTrips(sb, start, end), loadRateCard(sb, start, { standardOnly: true })]);
   const slab1Limit = card.slabs[0].upToOrder ?? 25;
   const r1 = formatINR(card.slabs[0].ratePaise).replace('.00', '');
   const r2 = formatINR((card.slabs[1] ?? card.slabs[0]).ratePaise).replace('.00', '');

@@ -67,27 +67,25 @@ export async function recalculateEarnings(sb: SupabaseClient, feIds: string[], m
 }
 
 /**
- * Recalculates every stored trip on or after a date, week by week, each week with the rate card in force for that week.
- * Used after a new rate card is created. Old earnings rows are superseded, never deleted.
+ * Recalculates stored trips from a date (up to an optional end date), day by day, each day with the rate card in force on that day.
+ * Used after rates change. Old earnings rows are superseded, never deleted.
  */
-export async function recalculateFrom(sb: SupabaseClient, fromDate: string, loadCard: (weekStart: string) => Promise<{ id: string | null; card: RateCard }>) {
-  const { cycleFor, addDays } = await import('@/src/engine/calendar');
-  const weeks = new Map<string, Set<string>>();
+export async function recalculateFrom(sb: SupabaseClient, fromDate: string, toDate: string | null, loadCard: (date: string) => Promise<{ id: string | null; card: RateCard }>) {
+  const days = new Map<string, Set<string>>();
   for (let from = 0; ; from += 1000) {
-    const { data, error } = await sb.from('trips').select('id, fe_id, operational_date').gte('operational_date', fromDate).order('id').range(from, from + 999);
+    let q = sb.from('trips').select('id, fe_id, operational_date').gte('operational_date', fromDate);
+    if (toDate) q = q.lte('operational_date', toDate);
+    const { data, error } = await q.order('id').range(from, from + 999);
     if (error) throw new Error(error.message);
-    for (const r of data ?? []) {
-      const ws = cycleFor(r.operational_date as string).start;
-      (weeks.get(ws) ?? weeks.set(ws, new Set()).get(ws)!).add(r.fe_id as string);
-    }
+    for (const r of data ?? []) (days.get(r.operational_date as string) ?? days.set(r.operational_date as string, new Set()).get(r.operational_date as string)!).add(r.fe_id as string);
     if (!data || data.length < 1000) break;
   }
   let written = 0;
-  for (const [ws, fes] of [...weeks].sort()) {
-    const { id, card } = await loadCard(ws);
-    if (!id) throw new Error(`No active rate card for the week of ${ws}`);
-    const r = await recalculateEarnings(sb, [...fes], ws, addDays(ws, 6), card, id);
+  for (const [d, fes] of [...days].sort()) {
+    const { id, card } = await loadCard(d);
+    if (!id) throw new Error(`No active rate card for ${d}`);
+    const r = await recalculateEarnings(sb, [...fes], d, d, card, id);
     written += r.written;
   }
-  return { weeks: weeks.size, written };
+  return { days: days.size, written };
 }

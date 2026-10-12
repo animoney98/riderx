@@ -19,7 +19,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
   const canApprove = me?.role === 'super_admin' || me?.role === 'finance_manager';
   const start = await resolveWeekStart(sb, sp.week);
   const cycle = cycleFor(start);
-  const [{ trips, withoutEarnings }, { card }] = await Promise.all([loadWeekTrips(sb, cycle.start, cycle.end), loadRateCard(sb, start)]);
+  const [{ trips, withoutEarnings }, { card }] = await Promise.all([loadWeekTrips(sb, cycle.start, cycle.end), loadRateCard(sb, start, { standardOnly: true })]);
   const slab1Limit = card.slabs[0].upToOrder ?? 25;
   const r1 = formatINR(card.slabs[0].ratePaise).replace('.00', '');
   const r2 = formatINR((card.slabs[1] ?? card.slabs[0]).ratePaise).replace('.00', '');

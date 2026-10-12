@@ -15,7 +15,7 @@ export async function approvePayroll(formData: FormData) {
   const sb = await supabaseServer();
   const cycle = cycleFor(week);
   if (cycle.start !== week) back('error=Invalid+week');
-  const [{ trips, withoutEarnings }, { id: cardId, card }] = await Promise.all([loadWeekTrips(sb, cycle.start, cycle.end), loadRateCard(sb, week)]);
+  const [{ trips, withoutEarnings }, { id: cardId, card }] = await Promise.all([loadWeekTrips(sb, cycle.start, cycle.end), loadRateCard(sb, week, { standardOnly: true })]);
   if (!cardId) back('error=No+active+rate+card');
   if (withoutEarnings > 0) back('error=Some+trips+have+no+calculated+earnings.+Import+again+first');
   const rows = buildWeekly(trips, cycle, card.slabs[0].upToOrder ?? 25);

@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { calculateTrips, dailyTotals, formatINR } from '@/src/engine/payout';
 import { loadRateCard } from '@/lib/rate-card';
 import { recalculateEarnings } from '@/lib/earnings';
-import { addDays, cycleFor } from '@/src/engine/calendar';
+import { cycleFor } from '@/src/engine/calendar';
 
 export interface Preview {
   ok: boolean;
@@ -64,10 +64,10 @@ export async function importAction(_prev: Preview | null, formData: FormData): P
   }
 
   const trips = toTrips(parsed.rows);
-  // Each Monday-Sunday week is priced with the rate card in force for that week.
-  const weekStarts = [...new Set(trips.map((t) => cycleFor(t.operationalDate).start))].sort();
-  const cards = new Map(await Promise.all(weekStarts.map(async (ws) => [ws, await loadRateCard(sb, ws)] as const)));
-  const earnings = weekStarts.flatMap((ws) => calculateTrips(trips.filter((t) => cycleFor(t.operationalDate).start === ws), cards.get(ws)!.card));
+  // Each operational day is priced with the rate card in force on that day (a one-day special card wins over the standard rates).
+  const dayList = [...new Set(trips.map((t) => t.operationalDate))].sort();
+  const cards = new Map(await Promise.all(dayList.map(async (d) => [d, await loadRateCard(sb, d)] as const)));
+  const earnings = dayList.flatMap((d) => calculateTrips(trips.filter((t) => t.operationalDate === d), cards.get(d)!.card));
   const zomatoByFe = new Map<string, number>();
   for (const r of parsed.rows) zomatoByFe.set(r.feId, (zomatoByFe.get(r.feId) ?? 0) + r.zomatoPayPaise);
 
@@ -103,9 +103,9 @@ export async function importAction(_prev: Preview | null, formData: FormData): P
     if ([...cards.values()].some((c) => !c.id)) return { ok: false, fatal: 'Trips were saved, but no active rate card exists, so earnings were not calculated. Run migration 0002 and import again.' };
     let written = 0;
     try {
-      for (const ws of weekStarts) {
-        const c = cards.get(ws)!;
-        const r = await recalculateEarnings(sb, feIds, ws, addDays(ws, 6), c.card, c.id!);
+      for (const d of dayList) {
+        const c = cards.get(d)!;
+        const r = await recalculateEarnings(sb, feIds, d, d, c.card, c.id!);
         written += r.written;
       }
     } catch (e) {
