@@ -20,9 +20,10 @@ const LIVE = [
   { href: '/daily-targets', label: 'Zomato Daily Targets' },
   { href: '/imports', label: 'Imports & Data Quality' },
   { href: '/rate-cards', label: 'Rate Cards' },
+  { href: '/audit-log', label: 'Audit Log' },
   { href: '/settings', label: 'Bank Settings' },
 ];
-const NOT_YET = ['Orders', 'Payout Management', 'Financials & Profit', 'Reports & Exports', 'Audit Log', 'User & Access Management'];
+const NOT_YET = ['Orders', 'Payout Management', 'Financials & Profit', 'Reports & Exports', 'User & Access Management'];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const sb = await supabaseServer();
