@@ -9,7 +9,7 @@ async function login(formData: FormData) {
     password: String(formData.get('password') ?? ''),
   });
   if (error) redirect('/login?error=1');
-  redirect('/riders');
+  redirect('/overview');
 }
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {

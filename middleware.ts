@@ -21,7 +21,7 @@ export async function middleware(req: NextRequest) {
   if (onRiderLogin) return data.user ? NextResponse.redirect(new URL('/rider', req.url)) : res;
   if (!data.user && path.startsWith('/rider')) return NextResponse.redirect(new URL('/rider-login', req.url));
   if (!data.user && !onLogin) return NextResponse.redirect(new URL('/login', req.url));
-  if (data.user && onLogin) return NextResponse.redirect(new URL('/riders', req.url));
+  if (data.user && onLogin) return NextResponse.redirect(new URL('/overview', req.url));
   return res;
 }
 
