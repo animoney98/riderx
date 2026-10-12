@@ -13,9 +13,11 @@ async function logout() {
 // Only pages that really work are links. The rest are shown as not built yet.
 const LIVE = [
   { href: '/riders', label: 'Riders' },
+  { href: '/daily-earnings', label: 'Daily Earnings' },
+  { href: '/payroll', label: 'Salary & Payroll' },
   { href: '/imports', label: 'Imports & Data Quality' },
 ];
-const NOT_YET = ['Overview Dashboard', 'Orders', 'Daily Earnings', 'Salary & Payroll', 'Payout Management', 'Zomato Reconciliation', 'Financials & Profit', 'Reports & Exports', 'Rate Cards & Settings', 'Audit Log', 'User & Access Management'];
+const NOT_YET = ['Overview Dashboard', 'Orders', 'Payout Management', 'Zomato Reconciliation', 'Financials & Profit', 'Reports & Exports', 'Rate Cards & Settings', 'Audit Log', 'User & Access Management'];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const sb = await supabaseServer();
