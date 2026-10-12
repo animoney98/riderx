@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { calculateTrips, dailyTotals, formatINR } from '@/src/engine/payout';
 import { loadRateCard } from '@/lib/rate-card';
 import { recalculateEarnings } from '@/lib/earnings';
-import { cycleFor } from '@/src/engine/calendar';
+import { addDays, cycleFor } from '@/src/engine/calendar';
 
 export interface Preview {
   ok: boolean;
@@ -64,9 +64,10 @@ export async function importAction(_prev: Preview | null, formData: FormData): P
   }
 
   const trips = toTrips(parsed.rows);
-  const firstDate = trips.map((t) => t.operationalDate).sort()[0];
-  const { id: cardId, card } = await loadRateCard(sb, firstDate);
-  const earnings = calculateTrips(trips, card);
+  // Each Monday-Sunday week is priced with the rate card in force for that week.
+  const weekStarts = [...new Set(trips.map((t) => cycleFor(t.operationalDate).start))].sort();
+  const cards = new Map(await Promise.all(weekStarts.map(async (ws) => [ws, await loadRateCard(sb, ws)] as const)));
+  const earnings = weekStarts.flatMap((ws) => calculateTrips(trips.filter((t) => cycleFor(t.operationalDate).start === ws), cards.get(ws)!.card));
   const zomatoByFe = new Map<string, number>();
   for (const r of parsed.rows) zomatoByFe.set(r.feId, (zomatoByFe.get(r.feId) ?? 0) + r.zomatoPayPaise);
 
@@ -99,11 +100,14 @@ export async function importAction(_prev: Preview | null, formData: FormData): P
       p_errors: parsed.issues,
     });
     if (error) return { ok: false, fatal: `Import failed and nothing was saved: ${error.message}` };
-    if (!cardId) return { ok: false, fatal: 'Trips were saved, but no active rate card exists, so earnings were not calculated. Run migration 0002 and import again.' };
+    if ([...cards.values()].some((c) => !c.id)) return { ok: false, fatal: 'Trips were saved, but no active rate card exists, so earnings were not calculated. Run migration 0002 and import again.' };
     let written = 0;
     try {
-      const r = await recalculateEarnings(sb, feIds, sortedDates[0], sortedDates[sortedDates.length - 1], card, cardId);
-      written = r.written;
+      for (const ws of weekStarts) {
+        const c = cards.get(ws)!;
+        const r = await recalculateEarnings(sb, feIds, ws, addDays(ws, 6), c.card, c.id!);
+        written += r.written;
+      }
     } catch (e) {
       return { ok: false, fatal: `Trips were saved, but earnings could not be calculated: ${(e as Error).message}. Importing the same file again will retry safely.` };
     }

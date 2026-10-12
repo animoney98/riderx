@@ -65,3 +65,29 @@ export async function recalculateEarnings(sb: SupabaseClient, feIds: string[], m
   }
   return { trips: trips.length, written: toInsert.length, superseded: toSupersede.length };
 }
+
+/**
+ * Recalculates every stored trip on or after a date, week by week, each week with the rate card in force for that week.
+ * Used after a new rate card is created. Old earnings rows are superseded, never deleted.
+ */
+export async function recalculateFrom(sb: SupabaseClient, fromDate: string, loadCard: (weekStart: string) => Promise<{ id: string | null; card: RateCard }>) {
+  const { cycleFor, addDays } = await import('@/src/engine/calendar');
+  const weeks = new Map<string, Set<string>>();
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await sb.from('trips').select('id, fe_id, operational_date').gte('operational_date', fromDate).order('id').range(from, from + 999);
+    if (error) throw new Error(error.message);
+    for (const r of data ?? []) {
+      const ws = cycleFor(r.operational_date as string).start;
+      (weeks.get(ws) ?? weeks.set(ws, new Set()).get(ws)!).add(r.fe_id as string);
+    }
+    if (!data || data.length < 1000) break;
+  }
+  let written = 0;
+  for (const [ws, fes] of [...weeks].sort()) {
+    const { id, card } = await loadCard(ws);
+    if (!id) throw new Error(`No active rate card for the week of ${ws}`);
+    const r = await recalculateEarnings(sb, [...fes], ws, addDays(ws, 6), card, id);
+    written += r.written;
+  }
+  return { weeks: weeks.size, written };
+}
