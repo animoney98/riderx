@@ -16,6 +16,7 @@ const LIVE = [
   { href: '/daily-earnings', label: 'Daily Earnings' },
   { href: '/payroll', label: 'Salary & Payroll' },
   { href: '/imports', label: 'Imports & Data Quality' },
+  { href: '/settings', label: 'Bank Settings' },
 ];
 const NOT_YET = ['Overview Dashboard', 'Orders', 'Payout Management', 'Zomato Reconciliation', 'Financials & Profit', 'Reports & Exports', 'Rate Cards & Settings', 'Audit Log', 'User & Access Management'];
 

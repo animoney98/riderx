@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { supabaseServer } from '@/lib/supabase-server';
@@ -36,7 +37,7 @@ export default async function RidersPage({ searchParams }: { searchParams: Promi
   const sb = await supabaseServer();
   const { data: riders } = await sb
     .from('riders')
-    .select('id, full_name, phone, status, onboarding_date, rider_platform_accounts(platform_rider_id)')
+    .select('id, full_name, phone, status, onboarding_date, rider_platform_accounts(platform_rider_id), rider_payment_details(bank_account_number)')
     .order('full_name');
 
   return (
@@ -63,7 +64,7 @@ export default async function RidersPage({ searchParams }: { searchParams: Promi
         <h2>{riders?.length ?? 0} riders</h2>
         <div className="tbl">
           <table>
-            <thead><tr><th>Name</th><th>FE ID</th><th>Phone</th><th>Status</th><th>Onboarded</th></tr></thead>
+            <thead><tr><th>Name</th><th>FE ID</th><th>Phone</th><th>Status</th><th>Onboarded</th><th>Bank details</th><th></th></tr></thead>
             <tbody>
               {(riders ?? []).map((r) => (
                 <tr key={r.id}>
@@ -72,9 +73,11 @@ export default async function RidersPage({ searchParams }: { searchParams: Promi
                   <td>{r.phone ?? '—'}</td>
                   <td><span className="pill p-ok">{r.status}</span></td>
                   <td>{r.onboarding_date ?? '—'}</td>
+                  <td>{(r.rider_payment_details as unknown as { bank_account_number: string | null } | { bank_account_number: string | null }[] | null) && [r.rider_payment_details].flat().some((d) => d && (d as { bank_account_number: string | null }).bank_account_number) ? <span className="pill p-ok">Added</span> : <span className="pill p-warn">Missing</span>}</td>
+                  <td><Link href={`/riders/${r.id}`}>Edit</Link></td>
                 </tr>
               ))}
-              {!riders?.length && <tr><td colSpan={5} className="note">No riders yet. Add the first one above.</td></tr>}
+              {!riders?.length && <tr><td colSpan={7} className="note">No riders yet. Add the first one above.</td></tr>}
             </tbody>
           </table>
         </div>

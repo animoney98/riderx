@@ -1,5 +1,5 @@
 import { supabaseServer } from '@/lib/supabase-server';
-import { loadWeekTrips, loadRiderNames, resolveWeekStart } from '@/lib/week-data';
+import { loadWeekTrips, loadRiderNames, loadBankDetails, loadSetting, resolveWeekStart } from '@/lib/week-data';
 import { loadRateCard } from '@/lib/rate-card';
 import { buildWeekly } from '@/src/engine/weekly';
 import { addDays, cycleFor } from '@/src/engine/calendar';
@@ -20,6 +20,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
   const r2 = formatINR((card.slabs[1] ?? card.slabs[0]).ratePaise).replace('.00', '');
   const rows = buildWeekly(trips, cycle, slab1Limit);
   const names = await loadRiderNames(sb, rows.map((r) => r.feId));
+  const [bank, debit] = await Promise.all([loadBankDetails(sb, rows.map((r) => r.feId)), loadSetting(sb, 'bank_debit_account')]);
+  const payable = rows.filter((r) => r.grossPaise > 0 && names.has(r.feId));
+  const noBank = payable.filter((r) => !bank.has(r.feId));
 
   const sum = (f: (r: (typeof rows)[number]) => number) => rows.reduce((s, r) => s + f(r), 0);
   const gross = sum((r) => r.grossPaise);
@@ -43,7 +46,13 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
       </div>
       <WeekPicker path="/payroll" start={cycle.start} payDate={cycle.payDate} />
       <div>
-        <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: '#141414' }} href={`/payroll/export?week=${cycle.start}`}>Download Payroll Excel (draft)</a>
+        <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: '#141414' }} href={`/payroll/export?week=${cycle.start}`}>Download Payroll Excel (draft)</a>{' '}
+        <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: '#141414', marginLeft: 8 }} href={`/payroll/bank-file?week=${cycle.start}`}>Download Bank file (draft)</a>
+        <p className="note" style={{ marginTop: 8 }}>
+          Bank file: {payable.length - noBank.length} of {payable.length} riders ready, {formatINR(payable.filter((r) => bank.has(r.feId)).reduce((s, r) => s + r.grossPaise, 0))}.
+          {!debit && <> The company debit account is not set — <a href="/settings">add it in Bank Settings</a>.</>}
+          {noBank.length > 0 && <> No bank details yet for: {noBank.map((r) => names.get(r.feId)).join(', ')} — they will be left out of the file. Add them on the Riders page.</>}
+        </p>
       </div>
       <div className="alert warn">
         <b>Draft.</b> These figures are calculated live from saved trips. Penalties, approval, payment recording and the Excel download are the next steps; until then nothing here is final.

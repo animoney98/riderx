@@ -59,3 +59,27 @@ export async function loadRiderInfo(sb: SupabaseClient, feIds: string[]): Promis
   }
   return out;
 }
+
+export interface BankDetails { holder: string; account: string; ifsc: string; bank: string | null }
+
+/** Bank details by FE ID. Only riders with complete details are returned. */
+export async function loadBankDetails(sb: SupabaseClient, feIds: string[]): Promise<Map<string, BankDetails>> {
+  const out = new Map<string, BankDetails>();
+  if (!feIds.length) return out;
+  const { data: accts } = await sb.from('rider_platform_accounts').select('platform_rider_id, rider_id').eq('platform', 'zomato').in('platform_rider_id', feIds);
+  const riderIds = [...new Set((accts ?? []).map((a) => a.rider_id as string))];
+  if (!riderIds.length) return out;
+  const { data: det } = await sb.from('rider_payment_details').select('rider_id, bank_account_holder, bank_account_number, bank_ifsc, bank_name').in('rider_id', riderIds);
+  const byRider = new Map((det ?? []).map((d) => [d.rider_id as string, d]));
+  for (const a of accts ?? []) {
+    const d = byRider.get(a.rider_id as string);
+    if (d?.bank_account_holder && d.bank_account_number && d.bank_ifsc)
+      out.set(a.platform_rider_id, { holder: d.bank_account_holder, account: d.bank_account_number, ifsc: d.bank_ifsc, bank: d.bank_name ?? null });
+  }
+  return out;
+}
+
+export async function loadSetting(sb: SupabaseClient, key: string): Promise<string | null> {
+  const { data } = await sb.from('app_settings').select('value').eq('key', key).maybeSingle();
+  return (data?.value as string | undefined) ?? null;
+}
