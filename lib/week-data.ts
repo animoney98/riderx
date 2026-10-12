@@ -1,13 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { cycleFor } from '@/src/engine/calendar';
-import type { EarnedTrip } from '@/src/engine/weekly';
-
-export interface TripDetail extends EarnedTrip {
-  deliveredAt: string;
-  pickupKm100: number;
-  dropKm100: number;
-  raining: boolean;
-}
+import type { TripDetail } from '@/src/engine/weekly';
+export type { TripDetail };
 
 const istToday = () => new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
 const isDate = (s?: string) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s));
@@ -52,5 +46,16 @@ export async function loadRiderNames(sb: SupabaseClient, feIds: string[]): Promi
   if (!feIds.length) return out;
   const { data } = await sb.from('rider_platform_accounts').select('platform_rider_id, riders(full_name)').eq('platform', 'zomato').in('platform_rider_id', feIds);
   for (const a of data ?? []) out.set(a.platform_rider_id, (a.riders as unknown as { full_name: string } | null)?.full_name ?? '');
+  return out;
+}
+
+export async function loadRiderInfo(sb: SupabaseClient, feIds: string[]): Promise<Map<string, { name: string; phone: string | null }>> {
+  const out = new Map<string, { name: string; phone: string | null }>();
+  if (!feIds.length) return out;
+  const { data } = await sb.from('rider_platform_accounts').select('platform_rider_id, riders(full_name, phone)').eq('platform', 'zomato').in('platform_rider_id', feIds);
+  for (const a of data ?? []) {
+    const r = a.riders as unknown as { full_name: string; phone: string | null } | null;
+    out.set(a.platform_rider_id, { name: r?.full_name ?? '', phone: r?.phone ?? null });
+  }
   return out;
 }

@@ -42,6 +42,9 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
         <h1>Weekly rider salary</h1>
       </div>
       <WeekPicker path="/payroll" start={cycle.start} payDate={cycle.payDate} />
+      <div>
+        <a className="btn" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none', color: '#141414' }} href={`/payroll/export?week=${cycle.start}`}>Download Payroll Excel (draft)</a>
+      </div>
       <div className="alert warn">
         <b>Draft.</b> These figures are calculated live from saved trips. Penalties, approval, payment recording and the Excel download are the next steps; until then nothing here is final.
       </div>

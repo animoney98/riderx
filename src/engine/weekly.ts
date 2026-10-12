@@ -19,6 +19,13 @@ export interface EarnedTrip {
   totalPaise: number;
 }
 
+export interface TripDetail extends EarnedTrip {
+  deliveredAt: string;
+  pickupKm100: number;
+  dropKm100: number;
+  raining: boolean;
+}
+
 export interface DailyRow {
   feId: string;
   date: string;
