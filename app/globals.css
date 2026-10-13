@@ -301,13 +301,16 @@ pre.script{font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-
 /* A thin beam of light that travels around the edge of the bar */
 .beamline{position:absolute;inset:-1px;width:calc(100% + 2px);height:calc(100% + 2px);pointer-events:none;overflow:visible}
 .beamline{--k:1}
-.beamline rect{fill:none;stroke-linecap:round;rx:30px;ry:30px;stroke-dasharray:.001 99.999;animation:beamrun 9s linear infinite;animation-delay:calc(-5s + var(--g) * .09s)}
+.beamline rect{fill:none;stroke-linecap:round;rx:30px;ry:30px;stroke-dasharray:.001 99.999;animation:beamrun 9s linear infinite,beamhue 5s ease-in-out infinite alternate;animation-delay:calc(-5s + var(--g) * .09s),calc(-1.5s + var(--g) * .3s)}
 /* A train of glowing white balls: a lead ball and smaller ones following. --g is the gap behind the leader. */
 .beamline .b0{--g:calc(var(--k) * 0.0)}.beamline .b1{--g:calc(var(--k) * 0.5)}.beamline .b2{--g:calc(var(--k) * 1.0)}.beamline .b3{--g:calc(var(--k) * 1.5)}.beamline .b4{--g:calc(var(--k) * 2.0)}.beamline .b5{--g:calc(var(--k) * 2.5)}.beamline .b6{--g:calc(var(--k) * 3.0)}
-.beamline .core{stroke:#fff}
-.beamline .halo{stroke:#fff}
-.beamline .core.b0{stroke-width:5;opacity:1}.beamline .core.b1{stroke-width:4.5;opacity:0.95}.beamline .core.b2{stroke-width:4;opacity:0.88}.beamline .core.b3{stroke-width:3.5;opacity:0.8}.beamline .core.b4{stroke-width:3;opacity:0.72}.beamline .core.b5{stroke-width:2.5;opacity:0.64}.beamline .core.b6{stroke-width:2;opacity:0.55}
-.beamline .halo.b0{stroke-width:16;filter:blur(5px);opacity:0.85}.beamline .halo.b1{stroke-width:14;filter:blur(4.8px);opacity:0.75}.beamline .halo.b2{stroke-width:12.5;filter:blur(4.5px);opacity:0.66}.beamline .halo.b3{stroke-width:11;filter:blur(4.2px);opacity:0.57}.beamline .halo.b4{stroke-width:9.5;filter:blur(3.9px);opacity:0.48}.beamline .halo.b5{stroke-width:8;filter:blur(3.6px);opacity:0.4}.beamline .halo.b6{stroke-width:6.5;filter:blur(3.3px);opacity:0.32}
+
+
+.beamline .core{stroke:#FFD9B0;--c0:#FFB466;--c1:#FFFFFF}
+.beamline .halo{stroke:#FF8A1A;--c0:#FF7A0A;--c1:#FFFFFF}
+.beamline .core.b0{stroke-width:3.6;opacity:1}.beamline .core.b1{stroke-width:3.4;opacity:0.95}.beamline .core.b2{stroke-width:3.1;opacity:0.88}.beamline .core.b3{stroke-width:2.8;opacity:0.8}.beamline .core.b4{stroke-width:2.5;opacity:0.72}.beamline .core.b5{stroke-width:2.2;opacity:0.64}.beamline .core.b6{stroke-width:1.9;opacity:0.55}
+.beamline .halo.b0{stroke-width:11;filter:blur(4px);opacity:0.85}.beamline .halo.b1{stroke-width:10.5;filter:blur(3.9px);opacity:0.76}.beamline .halo.b2{stroke-width:9.5;filter:blur(3.7px);opacity:0.67}.beamline .halo.b3{stroke-width:8.5;filter:blur(3.5px);opacity:0.58}.beamline .halo.b4{stroke-width:7.5;filter:blur(3.3px);opacity:0.49}.beamline .halo.b5{stroke-width:6.5;filter:blur(3.1px);opacity:0.41}.beamline .halo.b6{stroke-width:5.5;filter:blur(2.9px);opacity:0.33}
+@keyframes beamhue{from{stroke:var(--c0)}to{stroke:var(--c1)}}
 @keyframes beamrun{from{stroke-dashoffset:0}to{stroke-dashoffset:-100}}
 
 .brand{padding-right:20px;margin-right:6px;border-right:1px solid rgba(255,255,255,.12)}
