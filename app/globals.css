@@ -300,11 +300,15 @@ pre.script{font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-
   box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08)}
 /* A thin beam of light that travels around the edge of the bar */
 .beamline{position:absolute;inset:-1px;width:calc(100% + 2px);height:calc(100% + 2px);pointer-events:none;overflow:visible}
-.beamline rect{fill:none;stroke-linecap:round;rx:30px;ry:30px;animation:beamrun 9s linear infinite}
-.beamline .tail{display:none}
-.beamline .head{stroke:#FFEBD2;stroke-width:5;stroke-dasharray:.001 99.999}
-.beamline .glow{stroke:#FF8A1A;stroke-width:15;stroke-dasharray:.001 99.999;filter:blur(5px);opacity:.8}
-@keyframes beamrun{from{stroke-dashoffset:0}to{stroke-dashoffset:-100}}
+.beamline{--k:1}
+.beamline rect{fill:none;stroke-linecap:round;rx:30px;ry:30px;stroke-dasharray:.001 99.999;animation:beamrun 9s linear infinite}
+/* A train of glowing balls: one lead ball and three smaller ones following it. --g is the gap behind the leader. */
+.beamline .b0{--g:0}.beamline .b1{--g:calc(var(--k) * .55)}.beamline .b2{--g:calc(var(--k) * 1.05)}.beamline .b3{--g:calc(var(--k) * 1.5)}
+.beamline .core{stroke:#FFEBD2}
+.beamline .core.b0{stroke-width:5}.beamline .core.b1{stroke-width:4;opacity:.9}.beamline .core.b2{stroke-width:3.2;opacity:.75}.beamline .core.b3{stroke-width:2.4;opacity:.6}
+.beamline .halo{stroke:#FF8A1A}
+.beamline .halo.b0{stroke-width:15;filter:blur(5px);opacity:.8}.beamline .halo.b1{stroke-width:12;filter:blur(4.5px);opacity:.65}.beamline .halo.b2{stroke-width:9.5;filter:blur(4px);opacity:.5}.beamline .halo.b3{stroke-width:7;filter:blur(3.5px);opacity:.38}
+@keyframes beamrun{from{stroke-dashoffset:var(--g)}to{stroke-dashoffset:calc(var(--g) - 100)}}
 @media (prefers-reduced-motion:reduce){.beamline rect{animation:none}}
 
 .brand{padding-right:20px;margin-right:6px;border-right:1px solid rgba(255,255,255,.12)}
@@ -321,6 +325,7 @@ pre.script{font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-
 .me summary{width:40px;height:40px}
 @media (max-width:980px){
   .topbar{border-radius:30px;padding:10px 12px 10px 16px;flex-wrap:wrap;row-gap:10px}
+  .beamline{--k:2.6}
   .beamline rect{rx:30px;ry:30px}
   .brand{border-right:0;margin-right:0}
   .pillnav{order:3;flex:1 1 100%;justify-content:flex-start}

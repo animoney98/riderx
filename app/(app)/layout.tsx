@@ -44,7 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="shell">
       <header className="topbar">
-        <svg className="beamline" aria-hidden="true"><rect className="glow" width="100%" height="100%" pathLength="100" /><rect className="tail" width="100%" height="100%" pathLength="100" /><rect className="head" width="100%" height="100%" pathLength="100" /></svg>
+        <svg className="beamline" aria-hidden="true"><rect className="halo b3" width="100%" height="100%" pathLength="100" /><rect className="halo b2" width="100%" height="100%" pathLength="100" /><rect className="halo b1" width="100%" height="100%" pathLength="100" /><rect className="halo b0" width="100%" height="100%" pathLength="100" /><rect className="core b3" width="100%" height="100%" pathLength="100" /><rect className="core b2" width="100%" height="100%" pathLength="100" /><rect className="core b1" width="100%" height="100%" pathLength="100" /><rect className="core b0" width="100%" height="100%" pathLength="100" /></svg>
         <div className="brand"><span className="wordmark">Rider</span><Logo size={34} href="/overview" /></div>
         <TopNav main={profile?.active && ['super_admin', 'operations_manager'].includes(profile.role) ? MAIN : MAIN.filter((n) => n.href !== '/leads')} more={profile?.active && profile.role === 'super_admin' ? [...MORE, ...ADMIN_ONLY] : MORE} />
         <details className="me">
