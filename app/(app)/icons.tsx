@@ -12,6 +12,7 @@ const P: Record<string, React.ReactNode> = {
   users: <><rect x="4" y="10.5" width="16" height="10" rx="3" /><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 15v2" /></>,
   reports: <><path d="M5 20V11M12 20V4M19 20v-6" /></>,
   audit: <><path d="M7 3h8l4 4v14H7z" /><path d="M14 3v5h5M10 13h6M10 17h6" /></>,
+  leads: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5 1.6 0 3 .5 4.1 1.3" /><path d="M18 9v6M15 12h6" /></>,
   alert: <><path d="M12 8v5M12 16.5v.01" /><circle cx="12" cy="12" r="9" /></>,
   chev: <path d="m9 6 6 6-6 6" />,
   soon: <circle cx="12" cy="12" r="2" />,

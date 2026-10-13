@@ -14,6 +14,7 @@ async function logout() {
 const MAIN: NavItem[] = [
   { href: '/overview', label: 'Overview', icon: 'overview' },
   { href: '/riders', label: 'Riders', icon: 'riders' },
+  { href: '/leads', label: 'Leads', icon: 'leads' },
   { href: '/daily-earnings', label: 'Daily Earnings', icon: 'daily' },
   { href: '/payroll', label: 'Salary & Payroll', icon: 'payroll' },
   { href: '/reconciliation', label: 'Zomato Reconciliation', icon: 'recon' },
@@ -43,7 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="shell">
       <header className="topbar">
         <div className="brand"><div className="mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9" /></svg></div><div>Rider<span>X</span></div></div>
-        <TopNav main={MAIN} more={profile?.active && profile.role === 'super_admin' ? [...MORE, ...ADMIN_ONLY] : MORE} />
+        <TopNav main={profile?.active && ['super_admin', 'operations_manager'].includes(profile.role) ? MAIN : MAIN.filter((n) => n.href !== '/leads')} more={profile?.active && profile.role === 'super_admin' ? [...MORE, ...ADMIN_ONLY] : MORE} />
         <details className="me">
           <summary aria-label="Account">{initials(profile?.full_name ?? auth.user.email ?? '')}</summary>
           <div className="menu right">

@@ -1,8 +1,10 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Every page except /login and /rider-login requires a signed-in user.
+// Every page except /login, /rider-login and the lead webhook requires a signed-in user.
 export async function middleware(req: NextRequest) {
+  // The Google Form webhook has no browser session; it is protected by its own secret inside the route.
+  if (req.nextUrl.pathname === '/api/leads') return NextResponse.next();
   let res = NextResponse.next({ request: req });
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
     cookies: {

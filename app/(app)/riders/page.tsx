@@ -37,7 +37,7 @@ export default async function RidersPage({ searchParams }: { searchParams: Promi
   const sb = await supabaseServer();
   const { data: riders } = await sb
     .from('riders')
-    .select('id, full_name, phone, status, onboarding_date, rider_platform_accounts(platform_rider_id), rider_payment_details(bank_account_number, verified_at)')
+    .select('id, full_name, phone, status, onboarding_date, user_id, rider_platform_accounts(platform_rider_id), rider_payment_details(bank_account_number, verified_at)')
     .order('full_name');
 
   return (
@@ -64,7 +64,7 @@ export default async function RidersPage({ searchParams }: { searchParams: Promi
         <h2>{riders?.length ?? 0} riders</h2>
         <div className="tbl">
           <table>
-            <thead><tr><th>Name</th><th>FE ID</th><th>Phone</th><th>Status</th><th>Onboarded</th><th>Bank details</th><th></th></tr></thead>
+            <thead><tr><th>Name</th><th>FE ID</th><th>Phone</th><th>Status</th><th>Onboarded</th><th>Bank details</th><th>Login</th><th></th></tr></thead>
             <tbody>
               {(riders ?? []).map((r) => (
                 <tr key={r.id}>
@@ -78,10 +78,11 @@ export default async function RidersPage({ searchParams }: { searchParams: Promi
                     if (!d?.bank_account_number) return <span className="pill p-warn">Missing</span>;
                     return d.verified_at ? <span className="pill p-ok">Checked</span> : <span className="pill p-warn">Needs check</span>;
                   })()}</td>
+                  <td>{r.user_id ? <span className="pill p-login"><i className="dot" />Active</span> : <span className="note">None</span>}</td>
                   <td><Link href={`/riders/${r.id}`}>Edit</Link></td>
                 </tr>
               ))}
-              {!riders?.length && <tr><td colSpan={7} className="note">No riders yet. Add the first one above.</td></tr>}
+              {!riders?.length && <tr><td colSpan={8} className="note">No riders yet. Add the first one above.</td></tr>}
             </tbody>
           </table>
         </div>
