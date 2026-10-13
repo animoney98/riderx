@@ -244,12 +244,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         </div>
       </section>
 
-      <section className="card">
-        <div className="cardhead">
-          <h2>Connect your Google Form</h2>
+      <details className="card">
+        <summary style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+          <span><b>Google Form connection</b> <span className="note">setup steps, only needed if you ever reconnect it</span></span>
           <span className={`pill ${switchedOn ? 'p-ok' : 'p-warn'}`}>{switchedOn ? 'Switched on' : 'Not switched on yet'}</span>
-        </div>
-        <ol className="steps">
+        </summary>
+        <ol className="steps" style={{ marginTop: 16 }}>
           <li>In Vercel open the <b>riderx</b> project, then <b>Settings</b>, then <b>Environment Variables</b>. Add a new one named <code>LEADS_WEBHOOK_SECRET</code> with any long random value of your own (30 or more letters and numbers). Save, then <b>Redeploy</b> the latest deployment.</li>
           <li>Open your form in Google Forms (the edit view). Click the three dots at the top right, then <b>Apps Script</b>.</li>
           <li>Click <b>Copy script</b> below. In the Google editor, select everything and delete it, then paste. Replace <code>PASTE-YOUR-SECRET-HERE</code> with the same secret you used in step 1. Click <b>Save</b>.</li>
@@ -259,7 +259,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}><CopyButton text={appsScript(host)} /><span className="note">Copies the whole script, ready to paste into Google.</span></div>
         <details><summary>Show the script</summary><pre className="script">{appsScript(host)}</pre></details>
         <p className="note">Keep the secret private. If you ever think it leaked, change it in Vercel and in the script. The form answers are kept exactly as received, and the same response is never saved twice.</p>
-      </section>
+      </details>
     </>
   );
 }
