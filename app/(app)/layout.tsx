@@ -44,7 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="shell">
       <header className="topbar">
-        <div className="brand"><Logo size={44} /></div>
+        <div className="brand"><span className="wordmark">Rider</span><Logo size={40} href="/overview" /></div>
         <TopNav main={profile?.active && ['super_admin', 'operations_manager'].includes(profile.role) ? MAIN : MAIN.filter((n) => n.href !== '/leads')} more={profile?.active && profile.role === 'super_admin' ? [...MORE, ...ADMIN_ONLY] : MORE} />
         <details className="me">
           <summary aria-label="Account">{initials(profile?.full_name ?? auth.user.email ?? '')}</summary>
