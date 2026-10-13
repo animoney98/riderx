@@ -26,7 +26,7 @@ const MORE: NavItem[] = [
   { href: '/rate-cards', label: 'Rate Cards', icon: 'rates' },
   { href: '/reports', label: 'Reports & Exports', icon: 'reports' },
   { href: '/audit-log', label: 'Audit Log', icon: 'audit' },
-  { href: '/settings', label: 'Bank Settings', icon: 'bank' },
+  { href: '/settings', label: 'Bank', icon: 'bank' },
 ];
 const ADMIN_ONLY: NavItem[] = [{ href: '/users', label: 'User & Access', icon: 'users' }];
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('') || '?';

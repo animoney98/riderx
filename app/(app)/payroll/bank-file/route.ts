@@ -2,6 +2,7 @@ import { supabaseServer } from '@/lib/supabase-server';
 import { loadBankDetails, loadSetting, resolveWeekStart } from '@/lib/week-data';
 import { cycleFor } from '@/src/engine/calendar';
 import { buildBankFile } from '@/src/export/bankFile';
+import { loadPayouts } from '@/lib/payments';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,16 @@ export async function GET(req: Request) {
   // The bank file uses the frozen, approved figures only.
   const { data: cyc } = await sb.from('payout_cycles').select('id, status').eq('period_start', cycle.start).maybeSingle();
   if (!cyc) return new Response('Approve this week\'s payroll first. The bank file is built from approved figures only.', { status: 400 });
-  const { data: payouts } = await sb.from('rider_payouts').select('rider_id, net_payable_paise').eq('payout_cycle_id', cyc.id);
+  // Only what is still owed goes in the file, so a rider who was already paid is never paid twice.
+  // With ?only=failed the file holds just the riders whose bank payment failed earlier.
+  const loaded = await loadPayouts(sb, cycle.start);
+  const onlyFailed = new URL(req.url).searchParams.get('only') === 'failed';
+  let failedIds = new Set<string>();
+  if (onlyFailed) {
+    const { data: fl } = await sb.from('payment_failures').select('rider_payout_id').in('rider_payout_id', (loaded?.payouts ?? []).map((p) => p.payoutId));
+    failedIds = new Set((fl ?? []).map((f) => f.rider_payout_id as string));
+  }
+  const payouts = (loaded?.payouts ?? []).filter((p) => p.outstandingPaise > 0 && (!onlyFailed || failedIds.has(p.payoutId))).map((p) => ({ rider_id: p.riderId, net_payable_paise: p.outstandingPaise }));
   const { data: accts } = await sb.from('rider_platform_accounts').select('rider_id, platform_rider_id').eq('platform', 'zomato').in('rider_id', (payouts ?? []).map((p) => p.rider_id as string));
   const feByRider = new Map((accts ?? []).map((a) => [a.rider_id as string, a.platform_rider_id as string]));
   const bank = await loadBankDetails(sb, [...feByRider.values()]);
@@ -31,7 +41,7 @@ export async function GET(req: Request) {
     const b = bank.get(fe)!;
     return { feId: fe, name: b.holder, accountNumber: b.account, ifsc: b.ifsc, amountPaise: Number(p.net_payable_paise), remarks: `RiderX payout ${cycle.start} to ${cycle.end}` };
   });
-  if (!payments.length) return new Response('No rider has complete bank details with an amount to pay', { status: 400 });
+  if (!payments.length) return new Response(onlyFailed ? 'No failed payment is waiting to be paid again for this week' : 'No rider has complete bank details with an amount still to pay', { status: 400 });
 
   // Payment date must be today or later; use the scheduled Friday unless it has passed.
   const today = new Date(Date.now() + 5.5 * 3600 * 1000).toISOString().slice(0, 10);
@@ -45,7 +55,7 @@ export async function GET(req: Request) {
     return new Response(new Uint8Array(buffer), {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="RiderX-bank-file-${cycle.start}.xlsx"`,
+        'Content-Disposition': `attachment; filename="RiderX-bank-file-${cycle.start}${onlyFailed ? '-retry' : ''}.xlsx"`,
         'Cache-Control': 'no-store',
       },
     });

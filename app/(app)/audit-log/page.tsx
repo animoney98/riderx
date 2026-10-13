@@ -13,6 +13,7 @@ const LABELS: Record<string, string> = {
   'payroll.bank_file': 'Bank file downloaded',
   'payment.record': 'Payment recorded',
   'payment.record_all': 'All payments recorded',
+  'payment.bank_results': 'Bank results recorded (paid / failed)',
   'zomato.receipt': 'Money received from Zomato recorded',
   'rate_card.create': 'Standard rates changed',
   'rate_card.special_day': 'Special one-day rates added',
@@ -26,7 +27,11 @@ const LABELS: Record<string, string> = {
   'user.create': 'Team member added',
   'user.update': 'Team member role or status changed',
   'user.password_reset': 'Team member password reset',
-  'settings.debit_account': 'Bank debit account changed',
+  'settings.debit_account': 'Bank debit account set',
+  'settings.debit_account_requested': 'Bank debit account change requested',
+  'settings.debit_account_approve': 'Bank debit account change approved',
+  'settings.debit_account_reject': 'Bank debit account change rejected',
+  'settings.debit_account_cancel': 'Bank debit account request cancelled',
 };
 const GROUPS: [string, string][] = [['', 'Everything'], ['import', 'Imports'], ['rider', 'Riders'], ['payroll', 'Payroll'], ['payment', 'Payments'], ['rate_card', 'Rates'], ['zomato', 'Zomato'], ['settings', 'Settings'], ['user', 'Team'], ['report', 'Reports'], ['lead', 'Leads']];
 
