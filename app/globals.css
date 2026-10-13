@@ -300,12 +300,11 @@ pre.script{font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-
   box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08)}
 /* A thin beam of light that travels around the edge of the bar */
 .beamline{position:absolute;inset:-1px;width:calc(100% + 2px);height:calc(100% + 2px);pointer-events:none;overflow:visible}
-.beamline rect{fill:none;stroke-linecap:round;stroke-width:1.4;rx:30px;ry:30px;animation:beamrun 10s linear infinite}
-.beamline .tail{stroke:rgba(255,160,70,.5);stroke-dasharray:14 86}
-.beamline .head{stroke:#FFE2BF;stroke-dasharray:4 96;animation-name:beamhead}
-.beamline .glow{stroke:rgba(255,138,26,.55);stroke-width:3;stroke-dasharray:10 90;filter:blur(3px);opacity:.55;animation-name:beamhead}
+.beamline rect{fill:none;stroke-linecap:round;rx:30px;ry:30px;animation:beamrun 9s linear infinite}
+.beamline .tail{display:none}
+.beamline .head{stroke:#FFEBD2;stroke-width:5;stroke-dasharray:.001 99.999}
+.beamline .glow{stroke:#FF8A1A;stroke-width:15;stroke-dasharray:.001 99.999;filter:blur(5px);opacity:.8}
 @keyframes beamrun{from{stroke-dashoffset:0}to{stroke-dashoffset:-100}}
-@keyframes beamhead{from{stroke-dashoffset:-10}to{stroke-dashoffset:-110}}
 @media (prefers-reduced-motion:reduce){.beamline rect{animation:none}}
 
 .brand{padding-right:20px;margin-right:6px;border-right:1px solid rgba(255,255,255,.12)}
