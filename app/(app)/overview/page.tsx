@@ -9,6 +9,9 @@ const outstanding = (pay: Awaited<ReturnType<typeof loadPayouts>>) => (pay ? pay
 
 export default async function Overview() {
   const sb = await supabaseServer();
+  const { data: auth } = await sb.auth.getUser();
+  const { data: me } = await sb.from('profiles').select('role, active').eq('id', auth.user?.id ?? '').maybeSingle();
+  const isAdmin = !!me?.active && me.role === 'super_admin';
   const latest = await resolveWeekStart(sb);
   const weeks = [0, 1, 2, 3, 4, 5, 6, 7].map((i) => addDays(latest, -7 * i));
   const data = await Promise.all(weeks.map(async (w) => {
@@ -30,7 +33,7 @@ export default async function Overview() {
   if (noBank) alerts.push({ text: `${noBank} riders in the latest week have no checked bank details`, href: '/riders' });
   if (cur.fin.rows.length && !cur.pay) alerts.push({ text: `Latest week (${cur.c.start}) is not approved yet`, href: `/payroll?week=${cur.c.start}` });
   if (cur.pay && cur.pay.payouts.some((p) => p.outstandingPaise > 0)) alerts.push({ text: `Rider payments are outstanding for the week of ${cur.c.start}`, href: `/payroll/payments?week=${cur.c.start}` });
-  if (cur.fin.totals.revenuePaise > cur.received && cur.fin.rows.length) alerts.push({ text: `Zomato money for the week of ${cur.c.start} is not fully received`, href: `/reconciliation?week=${cur.c.start}` });
+  if (isAdmin && cur.fin.totals.revenuePaise > cur.received && cur.fin.rows.length) alerts.push({ text: `Zomato money for the week of ${cur.c.start} is not fully received`, href: `/reconciliation?week=${cur.c.start}` });
 
   const t = cur.fin.totals;
   const sum = (f: (x: (typeof trips)[number]) => number) => trips.reduce((s, x) => s + f(x), 0);
@@ -42,7 +45,7 @@ export default async function Overview() {
     prevRevenuePaise: prev.fin.rows.length ? prev.fin.totals.revenuePaise : null,
     approved: !!cur.pay, outstandingPaise: outstanding(cur.pay),
     split: { basePaise: sum((x) => x.basePaise), distancePaise: sum((x) => x.distancePaise), batchPaise: sum((x) => x.batchBonusPaise), rainPaise: sum((x) => x.rainPaise), festivalPaise: sum((x) => x.festivalPaise) },
-    alerts,
+    alerts, isAdmin,
     weeks: data.filter((d) => d.fin.rows.length).map((d) => ({
       start: d.c.start, orders: d.fin.totals.orders, revenuePaise: d.fin.totals.revenuePaise, riderPaise: d.fin.totals.riderPaise, marginPaise: d.fin.totals.marginPaise,
       approved: !!d.pay, outstandingPaise: outstanding(d.pay), toReceivePaise: d.fin.totals.revenuePaise - d.received,

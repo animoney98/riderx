@@ -41,12 +41,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!profile?.active && auth.user.email?.endsWith('@riders.riderx.app')) redirect('/rider');
   if (!profile && auth.user.phone) redirect('/rider');
 
+  const role = profile?.active ? (profile.role as string) : '';
+  const nav = {
+    main: MAIN.filter((n) => (n.href !== '/leads' || ['super_admin', 'operations_manager'].includes(role)) && (n.href !== '/reconciliation' || role === 'super_admin')),
+    more: role === 'super_admin' ? [...MORE, ...ADMIN_ONLY] : MORE,
+  };
   return (
     <div className="shell">
       <header className="topbar">
         <svg className="beamline" aria-hidden="true"><rect className="halo b6" width="100%" height="100%" pathLength="100" /><rect className="halo b5" width="100%" height="100%" pathLength="100" /><rect className="halo b4" width="100%" height="100%" pathLength="100" /><rect className="halo b3" width="100%" height="100%" pathLength="100" /><rect className="halo b2" width="100%" height="100%" pathLength="100" /><rect className="halo b1" width="100%" height="100%" pathLength="100" /><rect className="halo b0" width="100%" height="100%" pathLength="100" /><rect className="core b6" width="100%" height="100%" pathLength="100" /><rect className="core b5" width="100%" height="100%" pathLength="100" /><rect className="core b4" width="100%" height="100%" pathLength="100" /><rect className="core b3" width="100%" height="100%" pathLength="100" /><rect className="core b2" width="100%" height="100%" pathLength="100" /><rect className="core b1" width="100%" height="100%" pathLength="100" /><rect className="core b0" width="100%" height="100%" pathLength="100" /></svg>
         <div className="brand"><span className="wordmark">Rider</span><Logo size={34} href="/overview" /></div>
-        <TopNav main={profile?.active && ['super_admin', 'operations_manager'].includes(profile.role) ? MAIN : MAIN.filter((n) => n.href !== '/leads')} more={profile?.active && profile.role === 'super_admin' ? [...MORE, ...ADMIN_ONLY] : MORE} />
+        <TopNav main={nav.main} more={nav.more} />
         <details className="me">
           <summary aria-label="Account">{initials(profile?.full_name ?? auth.user.email ?? '')}</summary>
           <div className="menu right">

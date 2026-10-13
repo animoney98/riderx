@@ -18,6 +18,7 @@ export interface OverviewData {
   approved: boolean;
   outstandingPaise: number | null;
   split: { basePaise: number; distancePaise: number; batchPaise: number; rainPaise: number; festivalPaise: number };
+  isAdmin: boolean;
   alerts: { text: string; href: string }[];
   weeks: WeekRow[]; // newest first, only weeks with trips
 }
@@ -57,7 +58,7 @@ export function OverviewView({ d }: { d: OverviewData }) {
               </div>
               <div className="acts">
                 <Link className="dark" href={`/payroll?week=${d.weekStart}`}>Review payroll</Link>
-                <Link className="light" href={`/reconciliation?week=${d.weekStart}`}>Zomato reconciliation</Link>
+                {d.isAdmin && <Link className="light" href={`/reconciliation?week=${d.weekStart}`}>Zomato Revenue</Link>}
               </div>
             </section>
             <div className="mini">

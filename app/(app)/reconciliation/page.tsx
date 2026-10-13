@@ -7,6 +7,11 @@ import { cycleFor } from '@/src/engine/calendar';
 import { formatINR } from '@/src/engine/payout';
 import { WeekPicker } from '../week-picker';
 
+async function isAdmin(sb: Awaited<ReturnType<typeof supabaseServer>>, id?: string): Promise<boolean> {
+  const { data } = await sb.from('profiles').select('role, active').eq('id', id ?? '').maybeSingle();
+  return !!data?.active && data.role === 'super_admin';
+}
+
 async function record(formData: FormData) {
   'use server';
   const week = String(formData.get('week'));
@@ -18,6 +23,7 @@ async function record(formData: FormData) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) back('error=Enter+the+date+received');
   const sb = await supabaseServer();
   const { data: auth } = await sb.auth.getUser();
+  if (!(await isAdmin(sb, auth.user?.id))) back('error=Only+an+Admin+can+record+Zomato+receipts');
   const { error } = await sb.from('zomato_receipts').insert({ period_start: cycleFor(week).start, amount_paise: amount, received_on: date, reference: reference || null, recorded_by: auth.user?.id });
   if (error) back(`error=${encodeURIComponent(error.message.includes('ref_unique') ? 'That reference was already recorded' : 'Could not save. Only finance managers and admins can record receipts')}`);
   await sb.from('audit_logs').insert({ actor_id: auth.user?.id, action: 'zomato.receipt', entity_type: 'zomato_receipt', entity_id: week, after_values: { amount_paise: amount, reference } });
@@ -28,6 +34,8 @@ async function record(formData: FormData) {
 export default async function ReconciliationPage({ searchParams }: { searchParams: Promise<{ week?: string; error?: string; saved?: string }> }) {
   const sp = await searchParams;
   const sb = await supabaseServer();
+  const { data: auth } = await sb.auth.getUser();
+  if (!(await isAdmin(sb, auth.user?.id))) return <><h1>Zomato Revenue</h1><div className="alert warn">Only Admins can see this page.</div></>;
   const start = await resolveWeekStart(sb, sp.week);
   const cycle = cycleFor(start);
   const [fin, receipts] = await Promise.all([loadWeekFinance(sb, cycle.start, cycle.end), loadReceipts(sb, cycle.start)]);
