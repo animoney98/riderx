@@ -31,6 +31,21 @@ async function onboard(formData: FormData) {
   back(tab, 'saved=' + encodeURIComponent('Added to your riders. Create their login on their rider page when you are ready.'));
 }
 
+async function addByHand(formData: FormData) {
+  'use server';
+  const { sb, ok } = await requireStaff();
+  if (!ok) fail('all', 'Only admins and operations managers can add people');
+  const text = (k: string) => String(formData.get(k) ?? '').trim();
+  const fe = text('fe');
+  const { error } = await sb.rpc('add_person_by_hand', {
+    p_name: text('name'), p_phone: text('phone'), p_fe: fe, p_vehicle: text('vehicle'), p_email: text('email'), p_notes: text('notes'), p_urgent: formData.get('urgent') === 'on',
+  });
+  if (error) fail('all', error.message);
+  revalidatePath('/leads'); revalidatePath('/riders');
+  if (fe) back('onboarded', 'saved=' + encodeURIComponent(`${text('name')} was added to your riders with FE ID ${fe.toUpperCase()}. Create their login on their rider page when you are ready.`));
+  back('all', 'saved=' + encodeURIComponent(`${text('name')} was saved as a lead. Add their FE ID from their card when they are ready to join.`));
+}
+
 async function updateLead(formData: FormData) {
   'use server';
   const tab = String(formData.get('tab') ?? 'urgent');
@@ -111,6 +126,25 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
       </div>
       {sp.error && <div className="alert bad" role="alert">{sp.error}</div>}
       {sp.saved && <div className="alert ok">{sp.saved}</div>}
+
+      <details className="card addhand">
+        <summary><b>Add a person by hand</b> <span className="note">for walk-ins, referrals and phone calls</span></summary>
+        <form action={addByHand} className="handform">
+          <label>Full name<input name="name" required minLength={2} autoComplete="off" /></label>
+          <label>Mobile number<input name="phone" required inputMode="tel" placeholder="10-digit number" autoComplete="off" /></label>
+          <label>Zomato FE ID <small>(leave empty to save as a lead only)</small><input name="fe" placeholder="FE12345678" autoCapitalize="characters" autoComplete="off" /></label>
+          <label>Vehicle
+            <select name="vehicle" defaultValue="">
+              <option value="">Not known</option><option>Motorcycle</option><option>Scooter</option><option>EV 2 Wheeler</option><option>None</option>
+            </select>
+          </label>
+          <label>Email <small>(optional)</small><input name="email" type="email" autoComplete="off" /></label>
+          <label className="wide">Notes <small>(optional)</small><input name="notes" maxLength={1000} /></label>
+          <label className="check"><input type="checkbox" name="urgent" /> Flag as urgent</label>
+          <div className="wide"><button className="btn" type="submit">Save</button>
+            <span className="note"> With an FE ID they become a rider straight away. Without one, they are saved as a lead.</span></div>
+        </form>
+      </details>
 
       <section className="grid leadstats">
         {TABS.filter((t) => t.key !== 'all').map((t) => (
