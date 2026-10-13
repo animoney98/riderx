@@ -18,7 +18,7 @@ const MAIN: NavItem[] = [
   { href: '/leads', label: 'Leads', icon: 'leads' },
   { href: '/daily-earnings', label: 'Daily Earnings', icon: 'daily' },
   { href: '/payroll', label: 'Salary & Payroll', icon: 'payroll' },
-  { href: '/reconciliation', label: 'Zomato Reconciliation', icon: 'recon' },
+  { href: '/reconciliation', label: 'Zomato Revenue', icon: 'recon' },
 ];
 const MORE: NavItem[] = [
   { href: '/daily-targets', label: 'Zomato Daily Targets', icon: 'target' },

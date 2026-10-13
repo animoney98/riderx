@@ -38,7 +38,7 @@ export default async function ReconciliationPage({ searchParams }: { searchParam
   return (
     <>
       <div>
-        <div className="note" style={{ textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Zomato Reconciliation</div>
+        <div className="note" style={{ textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Zomato Revenue</div>
         <h1>What Zomato owes vs what riders earn</h1>
       </div>
       <WeekPicker path="/reconciliation" start={cycle.start} />
