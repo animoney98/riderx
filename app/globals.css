@@ -333,3 +333,12 @@ pre.script{font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-
   .pillnav{order:3;flex:1 1 100%;justify-content:flex-start}
   .me{margin-left:auto;border-left:0;padding-left:0}
 }
+
+/* Import Center */
+.howto{display:grid;grid-template-columns:1.1fr 1fr;gap:28px;margin-top:10px}
+.howto h3{font-size:14px;font-weight:600;margin:0 0 8px;letter-spacing:0}
+.howto .chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+.howto code,.plain code{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:2px 7px;font-size:12.5px}
+ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px;font-size:13.5px;color:#C9CDD1}
+ul.plain.rules{margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1)}
+@media (max-width:900px){.howto{grid-template-columns:1fr}}
