@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { supabaseServer } from '@/lib/supabase-server';
 import { appsScript } from '@/lib/leads-script';
 import { Icon } from '../icons';
+import { CopyButton } from './copy-button';
 import { TABS, ageOn, hasVehicle, isReady, isRejected, sortRank, tabsFor, urgentReason, type LeadFacts, type Tab } from '@/src/engine/leads';
 
 const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSc7AQPls9iZ2m48Q7LrhN4EbNrcrlF4s7nSSDbP7V7JBGj91g/viewform';
@@ -217,11 +218,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         <ol className="steps">
           <li>In Vercel open the <b>riderx</b> project, then <b>Settings</b>, then <b>Environment Variables</b>. Add a new one named <code>LEADS_WEBHOOK_SECRET</code> with any long random value of your own (30 or more letters and numbers). Save, then <b>Redeploy</b> the latest deployment.</li>
           <li>Open your form in Google Forms (the edit view). Click the three dots at the top right, then <b>Apps Script</b>.</li>
-          <li>Delete whatever is in the editor and paste the script below. Replace <code>PASTE-YOUR-SECRET-HERE</code> with the same secret you used in step 1. Click <b>Save</b>.</li>
+          <li>Click <b>Copy script</b> below. In the Google editor, select everything and delete it, then paste. Replace <code>PASTE-YOUR-SECRET-HERE</code> with the same secret you used in step 1. Click <b>Save</b>.</li>
           <li>Pick <code>sendAllExisting</code> in the function box at the top and click <b>Run</b>. Google will ask you to allow access once. This sends everyone who has already filled the form.</li>
           <li>Click the clock icon (<b>Triggers</b>), then <b>Add Trigger</b>. Choose function <code>onSubmit</code>, event source <b>From form</b>, event type <b>On form submit</b>. Save. From now on every new response arrives here within seconds.</li>
         </ol>
-        <details><summary>Show the script to paste</summary><pre className="script">{appsScript(host)}</pre></details>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 10 }}><CopyButton text={appsScript(host)} /><span className="note">Copies the whole script, ready to paste into Google.</span></div>
+        <details><summary>Show the script</summary><pre className="script">{appsScript(host)}</pre></details>
         <p className="note">Keep the secret private. If you ever think it leaked, change it in Vercel and in the script. The form answers are kept exactly as received, and the same response is never saved twice.</p>
       </section>
     </>
