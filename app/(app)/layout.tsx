@@ -22,7 +22,7 @@ const MAIN: NavItem[] = [
 ];
 const MORE: NavItem[] = [
   { href: '/daily-targets', label: 'Zomato Daily Targets', icon: 'target' },
-  { href: '/imports', label: 'Imports & Data Quality', icon: 'imports' },
+  { href: '/imports', label: 'Import Center', icon: 'imports' },
   { href: '/rate-cards', label: 'Rate Cards', icon: 'rates' },
   { href: '/reports', label: 'Reports & Exports', icon: 'reports' },
   { href: '/audit-log', label: 'Audit Log', icon: 'audit' },

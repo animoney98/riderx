@@ -98,7 +98,7 @@ export function OverviewView({ d }: { d: OverviewData }) {
                   </div>
                 </div>
               ) : <p className="note">No earnings calculated for this week yet.</p>}
-              {!splitMatches && parts.length > 0 && <div className="alert warn" style={{ marginTop: 12 }}>The split adds up to {formatINR(splitTotal)} but rider earnings are {formatINR(d.riderPaise)}. Check Imports &amp; Data Quality.</div>}
+              {!splitMatches && parts.length > 0 && <div className="alert warn" style={{ marginTop: 12 }}>The split adds up to {formatINR(splitTotal)} but rider earnings are {formatINR(d.riderPaise)}. Check Import Center.</div>}
             </section>
           </div>
 
