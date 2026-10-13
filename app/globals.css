@@ -294,18 +294,19 @@ pre.script{font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-
 .brand .xlogo{margin-left:0}
 
 /* ---- Top bar: one floating glass capsule with dividers and a moving aura ---- */
-@property --aura{syntax:'<angle>';inherits:false;initial-value:0deg}
 .topbar{position:sticky;border-radius:999px;padding:9px 12px 9px 22px;gap:0;
   background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.03)),rgba(14,14,17,.55);
   border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(26px) saturate(140%);-webkit-backdrop-filter:blur(26px) saturate(140%);
   box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08)}
-.topbar::before,.topbar::after{content:'';position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;
-  background:conic-gradient(from var(--aura),transparent 0 52%,rgba(255,120,20,.0) 56%,#FF8A1A 74%,#FFD6A0 82%,rgba(255,138,26,.0) 94%,transparent);
-  animation:aura 7s linear infinite}
-.topbar::before{padding:1.5px;-webkit-mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);-webkit-mask-composite:xor}
-.topbar::after{filter:blur(16px);opacity:.38;z-index:-1;inset:-3px}
-@keyframes aura{to{--aura:360deg}}
-@media (prefers-reduced-motion:reduce){.topbar::before,.topbar::after{animation:none}}
+/* A thin beam of light that travels around the edge of the bar */
+.beamline{position:absolute;inset:-1px;width:calc(100% + 2px);height:calc(100% + 2px);pointer-events:none;overflow:visible}
+.beamline rect{fill:none;stroke-linecap:round;stroke-width:1.4;rx:30px;ry:30px;animation:beamrun 10s linear infinite}
+.beamline .tail{stroke:rgba(255,160,70,.5);stroke-dasharray:14 86}
+.beamline .head{stroke:#FFE2BF;stroke-dasharray:4 96;animation-name:beamhead}
+.beamline .glow{stroke:rgba(255,138,26,.55);stroke-width:3;stroke-dasharray:10 90;filter:blur(3px);opacity:.55;animation-name:beamhead}
+@keyframes beamrun{from{stroke-dashoffset:0}to{stroke-dashoffset:-100}}
+@keyframes beamhead{from{stroke-dashoffset:-10}to{stroke-dashoffset:-110}}
+@media (prefers-reduced-motion:reduce){.beamline rect{animation:none}}
 
 .brand{padding-right:20px;margin-right:6px;border-right:1px solid rgba(255,255,255,.12)}
 .pillnav{flex:1;min-width:0;display:flex;justify-content:center}
@@ -321,6 +322,7 @@ pre.script{font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-
 .me summary{width:40px;height:40px}
 @media (max-width:980px){
   .topbar{border-radius:30px;padding:10px 12px 10px 16px;flex-wrap:wrap;row-gap:10px}
+  .beamline rect{rx:30px;ry:30px}
   .brand{border-right:0;margin-right:0}
   .pillnav{order:3;flex:1 1 100%;justify-content:flex-start}
   .me{margin-left:auto;border-left:0;padding-left:0}

@@ -44,6 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="shell">
       <header className="topbar">
+        <svg className="beamline" aria-hidden="true"><rect className="glow" width="100%" height="100%" pathLength="100" /><rect className="tail" width="100%" height="100%" pathLength="100" /><rect className="head" width="100%" height="100%" pathLength="100" /></svg>
         <div className="brand"><span className="wordmark">Rider</span><Logo size={34} href="/overview" /></div>
         <TopNav main={profile?.active && ['super_admin', 'operations_manager'].includes(profile.role) ? MAIN : MAIN.filter((n) => n.href !== '/leads')} more={profile?.active && profile.role === 'super_admin' ? [...MORE, ...ADMIN_ONLY] : MORE} />
         <details className="me">
