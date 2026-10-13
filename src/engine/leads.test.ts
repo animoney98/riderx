@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ageOn, isReady, parseAnswers, parseDob, sortRank, sourceKey, tabsFor, urgentReason, type LeadFacts } from './leads';
+import { ageOn, isReady, isRejected, parseAnswers, parseDob, sortRank, sourceKey, tabsFor, urgentReason, type LeadFacts } from './leads';
 
 const full = {
   'Full Name': ' Ravi Kumar ', 'Email Address': 'ravi@example.com', 'Phone Number': '+91 98765-43210', 'Date of Birth': '1998-04-12',
@@ -7,7 +7,7 @@ const full = {
   'Have you previously worked as a delivery partner?': 'Yes', 'If yes, which platforms have you worked with?': ['Zepto', 'Zomato'],
   'Do you currently have a Zomato delivery partner account?': 'Yes', 'When can you start?': 'Immediately', 'Are you interested in proceeding with the RiderX rider onboarding process?': 'Yes',
 };
-const facts = (o: Partial<LeadFacts> = {}): LeadFacts => ({ vehicleType: 'Scooter', hasLicenseInsurance: true, hasZomatoAccount: false, startWhen: 'Immediately', wantsOnboarding: true, status: 'new', urgentManual: false, ...o });
+const facts = (o: Partial<LeadFacts> = {}): LeadFacts => ({ dob: '1998-04-12', vehicleType: 'Scooter', hasLicenseInsurance: true, hasZomatoAccount: false, startWhen: 'Immediately', wantsOnboarding: true, status: 'new', urgentManual: false, ...o });
 
 describe('parseAnswers', () => {
   it('reads every form question', () => {
@@ -58,43 +58,67 @@ describe('dates', () => {
 });
 
 describe('segments', () => {
+  const T = new Date('2026-10-13T00:00:00Z');
+  const tabs = (o: Partial<LeadFacts> = {}) => tabsFor(facts(o), T);
   it('ready needs vehicle, licence+insurance and immediate start', () => {
-    expect(tabsFor(facts()).has('ready')).toBe(true);
-    expect(tabsFor(facts({ vehicleType: 'None' })).has('ready')).toBe(false);
-    expect(tabsFor(facts({ hasLicenseInsurance: false })).has('ready')).toBe(false);
-    expect(tabsFor(facts({ hasLicenseInsurance: null })).has('ready')).toBe(false);
-    expect(tabsFor(facts({ startWhen: '1 week' })).has('ready')).toBe(false);
+    expect(tabs().has('ready')).toBe(true);
+    expect(tabs({ vehicleType: 'None' }).has('ready')).toBe(false);
+    expect(tabs({ hasLicenseInsurance: false }).has('ready')).toBe(false);
+    expect(tabs({ hasLicenseInsurance: null }).has('ready')).toBe(false);
+    expect(tabs({ startWhen: '1 week' }).has('ready')).toBe(false);
   });
-  it('urgent is ready plus a Zomato account, or flagged by hand', () => {
-    expect(urgentReason(facts())).toBeNull();
-    expect(urgentReason(facts({ hasZomatoAccount: true }))).toBe('auto');
-    expect(urgentReason(facts({ urgentManual: true, vehicleType: 'None' }))).toBe('manual');
-    expect(urgentReason(facts({ hasZomatoAccount: true, startWhen: '2-3 Days' }))).toBeNull();
+  it('urgent: 18+, vehicle, no Zomato account, interested, starts within a week; licence not needed', () => {
+    expect(urgentReason(facts(), T)).toBe('auto');
+    expect(urgentReason(facts({ hasLicenseInsurance: false }), T)).toBe('auto');
+    expect(urgentReason(facts({ hasLicenseInsurance: null }), T)).toBe('auto');
+    for (const startWhen of ['Immediately', '2-3 Days', '1 week']) expect(urgentReason(facts({ startWhen }), T)).toBe('auto');
+    expect(urgentReason(facts({ startWhen: 'After 1 week' }), T)).toBeNull();
+    expect(urgentReason(facts({ startWhen: null }), T)).toBeNull();
+  });
+  it('urgent needs every condition', () => {
+    expect(urgentReason(facts({ vehicleType: 'None' }), T)).toBeNull();
+    expect(urgentReason(facts({ vehicleType: null }), T)).toBeNull();
+    expect(urgentReason(facts({ wantsOnboarding: false }), T)).toBeNull();
+    expect(urgentReason(facts({ wantsOnboarding: null }), T)).toBeNull();
+    expect(urgentReason(facts({ hasZomatoAccount: null }), T)).toBeNull();
+  });
+  it('urgent age limit is 18 on the day', () => {
+    expect(urgentReason(facts({ dob: '2008-10-13' }), T)).toBe('auto');   // turns 18 today
+    expect(urgentReason(facts({ dob: '2008-10-14' }), T)).toBeNull();     // 17
+    expect(urgentReason(facts({ dob: null }), T)).toBeNull();             // age unknown
+  });
+  it('anyone with a Zomato account is rejected and leaves every working tab', () => {
+    const t = tabs({ hasZomatoAccount: true });
+    expect([...t].sort()).toEqual(['all', 'rejected']);
+    expect(urgentReason(facts({ hasZomatoAccount: true, urgentManual: true }), T)).toBeNull();
+  });
+  it('a hand flag makes an open lead urgent', () => {
+    expect(urgentReason(facts({ urgentManual: true, vehicleType: 'None', startWhen: 'After 1 week' }), T)).toBe('manual');
   });
   it('someone who said no is not interested and not ready', () => {
-    const t = tabsFor(facts({ wantsOnboarding: false }));
+    const t = tabs({ wantsOnboarding: false });
     expect(t.has('interested')).toBe(false);
     expect(t.has('ready')).toBe(false);
     expect(t.has('vehicle')).toBe(true);
   });
   it('unanswered interest does not count as interested but can still be ready', () => {
-    const t = tabsFor(facts({ wantsOnboarding: null }));
+    const t = tabs({ wantsOnboarding: null });
     expect(t.has('interested')).toBe(false);
     expect(t.has('ready')).toBe(true);
   });
   it('onboarded and dropped leads leave the working tabs', () => {
-    expect([...tabsFor(facts({ status: 'onboarded', hasZomatoAccount: true }))].sort()).toEqual(['all', 'onboarded']);
-    expect([...tabsFor(facts({ status: 'dropped', hasZomatoAccount: true }))]).toEqual(['all']);
-  });
-  it('onboarded or dropped leads are never urgent or ready, even if flagged', () => {
+    expect([...tabs({ status: 'onboarded', hasZomatoAccount: true })].sort()).toEqual(['all', 'onboarded']);
+    expect([...tabs({ status: 'dropped' })]).toEqual(['all']);
     for (const status of ['onboarded', 'dropped'] as const) {
-      expect(urgentReason(facts({ status, urgentManual: true, hasZomatoAccount: true }))).toBeNull();
+      expect(urgentReason(facts({ status, urgentManual: true }), T)).toBeNull();
       expect(isReady(facts({ status }))).toBe(false);
+      expect(isRejected(facts({ status, hasZomatoAccount: true }))).toBe(false);
     }
   });
   it('sorts urgent before ready before interested before the rest', () => {
-    const r = [facts({ hasZomatoAccount: true }), facts(), facts({ startWhen: '1 week' }), facts({ wantsOnboarding: false, startWhen: '1 week' })].map(sortRank);
-    expect(r).toEqual([0, 1, 2, 3]);
+    const r = [facts(), facts({ startWhen: 'After 1 week' }), facts({ startWhen: 'After 1 week', vehicleType: 'None' }), facts({ wantsOnboarding: false, startWhen: 'After 1 week', vehicleType: 'None' })].map((f) => sortRank(f, T));
+    expect(r).toEqual([0, 2, 2, 3]);
+    expect(sortRank(facts({ dob: '2010-01-01' }), T)).toBe(1); // under 18 but ready: not urgent
   });
 });
 

@@ -20,6 +20,7 @@ export interface ParsedLead {
 
 /** Everything the segment rules need from a saved lead. */
 export interface LeadFacts {
+  dob: string | null;
   vehicleType: string | null;
   hasLicenseInsurance: boolean | null;
   hasZomatoAccount: boolean | null;
@@ -116,37 +117,55 @@ export const hasVehicle = (l: Pick<LeadFacts, 'vehicleType'>): boolean => !!l.ve
 export const isOpen = (l: Pick<LeadFacts, 'status'>): boolean => l.status === 'new' || l.status === 'contacted';
 export const isInterested = (l: Pick<LeadFacts, 'wantsOnboarding'>): boolean => l.wantsOnboarding === true;
 
-/** Has a vehicle, has licence and insurance, and can start now. Could be riding this week. */
-export const isReady = (l: LeadFacts): boolean => isOpen(l) && l.wantsOnboarding !== false && hasVehicle(l) && l.hasLicenseInsurance === true && l.startWhen === 'Immediately';
+/** RiderX does not take people who already hold a Zomato delivery partner account. They are kept on record but never worked. */
+export const isRejected = (l: Pick<LeadFacts, 'status' | 'hasZomatoAccount'>): boolean => isOpen(l) && l.hasZomatoAccount === true;
 
-/** Ready, and already holds a Zomato partner account, so only the FE ID is needed. Or flagged urgent by hand. */
-export const urgentReason = (l: LeadFacts): 'manual' | 'auto' | null => (!isOpen(l) ? null : l.urgentManual ? 'manual' : isReady(l) && l.hasZomatoAccount === true ? 'auto' : null);
+/** Has a vehicle, licence and insurance, and can start immediately. */
+export const isReady = (l: LeadFacts): boolean =>
+  isOpen(l) && !isRejected(l) && l.wantsOnboarding !== false && hasVehicle(l) && l.hasLicenseInsurance === true && l.startWhen === 'Immediately';
 
-export type Tab = 'urgent' | 'ready' | 'interested' | 'vehicle' | 'onboarded' | 'all';
+/** Start times that still count as urgent. */
+export const URGENT_STARTS = ['Immediately', '2-3 Days', '1 week'];
+
+/**
+ * Urgent: 18 or older, has a vehicle, no Zomato account, said yes to onboarding, and can start immediately, in 2-3 days or in a week.
+ * A licence is not required. A lead you flag by hand is also urgent, unless they hold a Zomato account.
+ */
+export function urgentReason(l: LeadFacts, today = new Date()): 'manual' | 'auto' | null {
+  if (!isOpen(l) || isRejected(l)) return null;
+  if (l.urgentManual) return 'manual';
+  const age = ageOn(l.dob, today);
+  const auto = age !== null && age >= 18 && hasVehicle(l) && l.hasZomatoAccount === false && l.wantsOnboarding === true && !!l.startWhen && URGENT_STARTS.includes(l.startWhen);
+  return auto ? 'auto' : null;
+}
+
+export type Tab = 'urgent' | 'ready' | 'interested' | 'vehicle' | 'onboarded' | 'rejected' | 'all';
 export const TABS: { key: Tab; label: string; hint: string }[] = [
-  { key: 'urgent', label: 'Urgent', hint: 'Ready to join and already hold a Zomato account, or flagged urgent by you.' },
+  { key: 'urgent', label: 'Urgent', hint: '18 or older, has a vehicle, no Zomato account, interested, and can start immediately, in 2-3 days or in a week. A licence is not required. Leads you flag by hand also appear here.' },
   { key: 'ready', label: 'Ready to join', hint: 'Have a vehicle, licence and insurance, and can start immediately.' },
   { key: 'interested', label: 'Interested', hint: 'Said yes to continuing with RiderX onboarding.' },
   { key: 'vehicle', label: 'With vehicle', hint: 'Own an EV, scooter or motorcycle.' },
   { key: 'onboarded', label: 'Added as riders', hint: 'Already added to the rider list.' },
-  { key: 'all', label: 'All', hint: 'Every enquiry, including those not interested or dropped.' },
+  { key: 'rejected', label: 'Rejected', hint: 'Already hold a Zomato delivery partner account, so RiderX does not take them. Kept here for your records.' },
+  { key: 'all', label: 'All', hint: 'Every enquiry, including rejected, not interested and dropped.' },
 ];
 
-/** Which tabs a lead appears in. Onboarded leads only show under "Added as riders" and "All"; dropped ones only under "All". */
-export function tabsFor(l: LeadFacts): Set<Tab> {
+/** Which tabs a lead appears in. Added riders, rejected and dropped leads never appear in the working tabs. */
+export function tabsFor(l: LeadFacts, today = new Date()): Set<Tab> {
   const t = new Set<Tab>(['all']);
   if (l.status === 'onboarded') { t.add('onboarded'); return t; }
   if (l.status === 'dropped') return t;
-  if (urgentReason(l)) t.add('urgent');
+  if (isRejected(l)) { t.add('rejected'); return t; }
+  if (urgentReason(l, today)) t.add('urgent');
   if (isReady(l)) t.add('ready');
   if (isInterested(l)) t.add('interested');
   if (hasVehicle(l)) t.add('vehicle');
   return t;
 }
 
-/** Most pressing first: urgent, then ready, then newest. */
-export function sortRank(l: LeadFacts): number {
-  return (urgentReason(l) ? 0 : isReady(l) ? 1 : isInterested(l) ? 2 : 3);
+/** Most pressing first: urgent, then ready, then interested, then the rest. */
+export function sortRank(l: LeadFacts, today = new Date()): number {
+  return (urgentReason(l, today) ? 0 : isReady(l) ? 1 : isInterested(l) ? 2 : 3);
 }
 
 export function sourceKey(id: string | undefined, timestamp: string | undefined, phone10: string): string {

@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { supabaseServer } from '@/lib/supabase-server';
 import { appsScript } from '@/lib/leads-script';
 import { Icon } from '../icons';
-import { TABS, ageOn, hasVehicle, isReady, sortRank, tabsFor, urgentReason, type LeadFacts, type Tab } from '@/src/engine/leads';
+import { TABS, ageOn, hasVehicle, isReady, isRejected, sortRank, tabsFor, urgentReason, type LeadFacts, type Tab } from '@/src/engine/leads';
 
 const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSc7AQPls9iZ2m48Q7LrhN4EbNrcrlF4s7nSSDbP7V7JBGj91g/viewform';
 const back = (tab: string, q: string): never => redirect(`/leads?tab=${tab}&${q}`);
@@ -134,13 +134,16 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
         <div className="leadlist">
           {shown.map((l) => {
             const urgent = urgentReason(l);
+            const rejected = isRejected(l);
             const dupe = !l.rider && byPhone.get(l.phone10);
             const age = ageOn(l.dob);
             return (
-              <article key={l.id} className={`lead${urgent ? ' urgent' : ''}`}>
+              <article key={l.id} className={`lead${urgent ? ' urgent' : ''}${rejected ? ' rejected' : ''}`}>
                 <div className="lead-main">
                   <div className="lead-name">
                     <b>{l.fullName}</b>
+                    {rejected && <span className="pill p-bad">Rejected · already has a Zomato account</span>}
+                    {age !== null && age < 18 && <span className="pill p-warn">Under 18</span>}
                     {urgent && <span className="pill p-urgent">Urgent{urgent === 'manual' ? ' · flagged by you' : ''}</span>}
                     {!urgent && isReady(l) && <span className="pill p-ready">Ready to join</span>}
                     {l.status === 'new' && Date.now() - Date.parse(l.submittedAt) < 172800000 && <span className="pill p-new">New</span>}
@@ -158,7 +161,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                     <span className={`fact${l.startWhen === 'Immediately' ? ' good' : ''}`}><small>Can start</small>{l.startWhen ?? 'Not answered'}</span>
                     <span className="fact"><small>Wants</small>{l.workType ?? 'Not answered'}</span>
                     <span className="fact"><small>Delivery experience</small>{l.priorExperience === false ? 'None' : l.platforms.length ? l.platforms.join(', ') : yn(l.priorExperience)}</span>
-                    <span className={`fact${l.hasZomatoAccount ? ' good' : ''}`}><small>Zomato account</small>{yn(l.hasZomatoAccount)}</span>
+                    <span className={`fact${l.hasZomatoAccount === true ? ' bad' : l.hasZomatoAccount === false ? ' good' : ''}`}><small>Zomato account</small>{yn(l.hasZomatoAccount)}</span>
                   </div>
                   {l.notes && <div className="note" style={{ marginTop: 8 }}>Note: {l.notes}</div>}
                 </div>
@@ -173,6 +176,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
                         ? <span className="pill p-login"><i className="dot" />Login active</span>
                         : <Link href={`/riders/${l.rider.id}`} className="pill p-nologin">No login yet · set PIN</Link>}
                     </div>
+                  ) : rejected ? (
+                    <div className="alert bad" style={{ fontSize: 13 }}>Not eligible: this person already holds a Zomato delivery partner account.</div>
                   ) : dupe ? (
                     <div className="alert warn" style={{ fontSize: 13 }}>This phone number already belongs to rider <Link href={`/riders/${dupe.id}`}>{dupe.name}</Link>{dupe.fe ? ` (${dupe.fe})` : ''}. Mark this lead as dropped, or fix the phone on the rider.</div>
                   ) : (
