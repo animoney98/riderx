@@ -262,6 +262,12 @@ pre.script{font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-
 .addhand summary { cursor: pointer; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
 .handform { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-top: 16px; }
 .handform label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
-.handform label small { opacity: .7; }
+.handform label small { opacity: .7; font-size: 12px; margin-top: -2px; }
+.handform label { align-self: start; }
+.handform input, .handform select { width: 100%; }
 .handform .wide { grid-column: 1 / -1; }
 .handform .check { flex-direction: row; align-items: center; gap: 8px; }
+.handform input[type=checkbox] { width: 18px; min-height: 0; height: 18px; padding: 0; }
+.handform .check { align-self: center; font-size: 14px; }
+@media (min-width: 1100px) { .handform { grid-template-columns: repeat(5, 1fr); } }
+.handform .wide .btn, .handform .wide button { margin-right: 10px; }

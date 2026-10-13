@@ -128,18 +128,18 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
       {sp.saved && <div className="alert ok">{sp.saved}</div>}
 
       <details className="card addhand">
-        <summary><b>Add a person by hand</b> <span className="note">for walk-ins, referrals and phone calls</span></summary>
+        <summary><b>Manual Rider Entry</b> <span className="note">for walk-ins, referrals and phone calls</span></summary>
         <form action={addByHand} className="handform">
-          <label>Full name<input name="name" required minLength={2} autoComplete="off" /></label>
+          <label>Full name<input name="name" placeholder="As on their ID" required minLength={2} autoComplete="off" /></label>
           <label>Mobile number<input name="phone" required inputMode="tel" placeholder="10-digit number" autoComplete="off" /></label>
-          <label>Zomato FE ID <small>(leave empty to save as a lead only)</small><input name="fe" placeholder="FE12345678" autoCapitalize="characters" autoComplete="off" /></label>
+          <label>Zomato FE ID<input name="fe" placeholder="FE12345678" autoCapitalize="characters" autoComplete="off" /><small>Leave empty to save as a lead only</small></label>
           <label>Vehicle
             <select name="vehicle" defaultValue="">
               <option value="">Not known</option><option>Motorcycle</option><option>Scooter</option><option>EV 2 Wheeler</option><option>None</option>
             </select>
           </label>
-          <label>Email <small>(optional)</small><input name="email" type="email" autoComplete="off" /></label>
-          <label className="wide">Notes <small>(optional)</small><input name="notes" maxLength={1000} /></label>
+          <label>Email<input name="email" type="email" placeholder="Optional" autoComplete="off" /></label>
+          <label className="wide">Notes<input name="notes" maxLength={1000} placeholder="Optional" /></label>
           <label className="check"><input type="checkbox" name="urgent" /> Flag as urgent</label>
           <div className="wide"><button className="btn" type="submit">Save</button>
             <span className="note"> With an FE ID they become a rider straight away. Without one, they are saved as a lead.</span></div>
