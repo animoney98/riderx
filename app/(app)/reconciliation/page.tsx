@@ -38,11 +38,18 @@ export default async function ReconciliationPage({ searchParams }: { searchParam
   if (!(await isAdmin(sb, auth.user?.id))) return <><h1>Zomato Revenue</h1><div className="alert warn">Only Admins can see this page.</div></>;
   const start = await resolveWeekStart(sb, sp.week);
   const cycle = cycleFor(start);
-  const [fin, receipts] = await Promise.all([loadWeekFinance(sb, cycle.start, cycle.end), loadReceipts(sb, cycle.start)]);
+  const [fin, receipts, life, allReceipts] = await Promise.all([
+    loadWeekFinance(sb, cycle.start, cycle.end),
+    loadReceipts(sb, cycle.start),
+    loadWeekFinance(sb, '2000-01-01', '2999-12-31'),
+    sb.from('zomato_receipts').select('amount_paise'),
+  ]);
   const names = await loadRiderNames(sb, fin.rows.map((r) => r.feId));
   const received = receipts.reduce((s, r) => s + r.amountPaise, 0);
   const diff = fin.totals.revenuePaise - received;
   const t = fin.totals;
+  const lt = life.totals;
+  const lifeReceived = (allReceipts.data ?? []).reduce((a, r) => a + Number(r.amount_paise), 0);
   return (
     <>
       <div>
@@ -59,6 +66,20 @@ export default async function ReconciliationPage({ searchParams }: { searchParam
         <div className="stat"><span>RiderX margin</span><b>{formatINR(t.marginPaise)}{t.marginPct !== null ? ` (${t.marginPct}%)` : ''}</b></div>
         <div className="stat"><span>Received from Zomato</span><b>{formatINR(received)}</b></div>
         <div className="stat"><span>Still to receive</span><b>{formatINR(diff)}</b></div>
+      </section>
+
+      <section className="card">
+        <h2>Lifetime earnings</h2>
+        <p className="note" style={{ marginTop: 0 }}>All weeks since the first import, not just the week selected above.</p>
+        <div className="grid">
+          <div className="stat"><span>Zomato payout, lifetime</span><b>{formatINR(lt.revenuePaise)}</b></div>
+          <div className="stat"><span>Rider earnings, lifetime</span><b>{formatINR(lt.riderPaise)}</b></div>
+          <div className="stat"><span>RiderX margin, lifetime</span><b>{formatINR(lt.marginPaise)}{lt.marginPct !== null ? ` (${lt.marginPct}%)` : ''}</b></div>
+          <div className="stat"><span>Orders, lifetime</span><b>{lt.orders}</b></div>
+          <div className="stat"><span>Received from Zomato, lifetime</span><b>{formatINR(lifeReceived)}</b></div>
+          <div className="stat"><span>Still to receive, lifetime</span><b>{formatINR(lt.revenuePaise - lifeReceived)}</b></div>
+        </div>
+        {life.withoutEarnings > 0 && <p className="note">{life.withoutEarnings} trips have no calculated earnings and are left out of these totals. Import the file again to calculate them.</p>}
       </section>
 
       <section className="card">
