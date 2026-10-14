@@ -123,7 +123,7 @@ export function OverviewView({ d }: { d: OverviewData }) {
         </div>
 
         <aside className="ov-side">
-          <section className="card">
+          <section className={d.alerts.length > 0 ? 'card needs-alert' : 'card'}>
             <div className="cardhead"><h2>Needs attention</h2>{d.alerts.length > 0 && <span className="chipbtn">{d.alerts.length}</span>}</div>
             {d.alerts.length ? (
               <ul className="alist">

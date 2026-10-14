@@ -342,3 +342,21 @@ pre.script{font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-
 ul.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px;font-size:13.5px;color:#C9CDD1}
 ul.plain.rules{margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1)}
 @media (max-width:900px){.howto{grid-template-columns:1fr}}
+
+/* Needs attention: red flicker while something needs action */
+.needs-alert{border-color:rgba(255,59,48,.7);animation:alertcard 1.4s ease-in-out infinite}
+.needs-alert .chipbtn{background:#FF3B30;border-color:#FF3B30;color:#fff;font-weight:700;animation:alertchip 1.4s ease-in-out infinite}
+.needs-alert .alist a{border-color:rgba(255,59,48,.55);animation:alertrow 1.4s ease-in-out infinite}
+.needs-alert .alist .ic{background:#FF3B30;border-color:#FF3B30;animation:alertchip 1.4s ease-in-out infinite}
+@keyframes alertcard{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,59,48,0),0 0 10px rgba(255,59,48,.18)}
+  50%{box-shadow:0 0 0 1px rgba(255,59,48,.6),0 0 30px rgba(255,59,48,.5)}
+}
+@keyframes alertrow{
+  0%,100%{background:rgba(255,59,48,.06)}
+  50%{background:rgba(255,59,48,.26)}
+}
+@keyframes alertchip{
+  0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(255,59,48,0)}
+  50%{opacity:.6;box-shadow:0 0 14px rgba(255,59,48,.9)}
+}
