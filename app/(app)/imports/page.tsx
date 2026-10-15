@@ -44,7 +44,7 @@ export default async function ImportsPage() {
           <ol className="steps">
             <li>Get Zomato's <b>per-trip payout sheet</b> as an Excel file (.xlsx or .xls, up to 10 MB). Only the first sheet is read.</li>
             <li>Click <b>Choose file</b>, then <b>Check file</b>. This saves nothing. It shows what would be imported and any problems.</li>
-            <li>Fix anything flagged. Every FE ID must already be a rider on the Riders page, otherwise the import is blocked until you add them.</li>
+            <li>Fix anything flagged. The FE ID column can hold just the number (11568286) or FE11568286; the system adds the FE itself. Every FE ID must already be a rider on the Riders page, otherwise the import is blocked until you add them.</li>
             <li>Click <b>Import</b>. Trips are saved and earnings are calculated with the rates in force on each day.</li>
             <li>Go to <b>Salary &amp; Payroll</b> to review and approve the week.</li>
           </ol>
@@ -56,7 +56,7 @@ export default async function ImportsPage() {
           </div>
         </div>
         <ul className="plain rules">
-          <li><b>Rows are rejected,</b> and listed with the reason, if trip_id is empty or repeated, the FE ID is not FE followed by digits, distances are missing or negative, or orders is not 1 or 2.</li>
+          <li><b>Rows are rejected,</b> and listed with the reason, if trip_id is empty or repeated, the FE ID is not a number (or FE followed by a number), distances are missing or negative, or orders is not 1 or 2.</li>
           <li><b>Uploading the same file again is safe.</b> It never creates duplicate trips. It also recalculates earnings for those days with the current rates. Weeks you have already approved keep their approved figures.</li>
           <li><b>A trip that Zomato later changes</b> is left as first saved and flagged for your review, never overwritten.</li>
           <li><b>Days run midnight to midnight (India time),</b> and weeks run Monday to Sunday, paid on the Friday after.</li>

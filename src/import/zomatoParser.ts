@@ -42,6 +42,13 @@ const num = (v: unknown): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 
+/** Zomato sends the bare number (11568286). Riders are stored as FE11568286, so add the FE. Also accepts "fe 123", "FE-123" and Excel's "123.0". */
+export function normalizeFeId(v: unknown): string {
+  const t = String(v ?? '').trim().replace(/\s+/g, '');
+  const digits = t.match(/^(?:FE-?)?(\d+)(?:\.0+)?$/i);
+  return digits ? `FE${digits[1]}` : t;
+}
+
 export function parseZomatoWorkbook(buf: Buffer | Uint8Array): ParseResult {
   const wb = XLSX.read(buf, { type: 'buffer', cellDates: false });
   const ws = wb.Sheets[wb.SheetNames[0]];
@@ -59,7 +66,7 @@ export function parseZomatoWorkbook(buf: Buffer | Uint8Array): ParseResult {
     const rowNo = i + 2;
     const g = (k: string) => r[k] ?? r[k + ' '];
     const tripId = String(g('trip_id')).trim();
-    const feId = String(g('FE ID')).trim();
+    const feId = normalizeFeId(g('FE ID'));
     const delivered = num(g('delivered_at'));
     const pickup = num(g('pickup_distance'));
     const drop = num(g('drop_distance'));
