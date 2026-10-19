@@ -2,7 +2,7 @@ import { Logo } from '../logo';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
-import { TopNav, type NavItem } from './top-nav';
+import { SideNav, type NavItem } from './side-nav';
 
 async function logout() {
   'use server';
@@ -48,18 +48,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   };
   return (
     <div className="shell">
-      <header className="topbar">
-        <svg className="beamline" aria-hidden="true"><rect className="halo b6" width="100%" height="100%" pathLength="100" /><rect className="halo b5" width="100%" height="100%" pathLength="100" /><rect className="halo b4" width="100%" height="100%" pathLength="100" /><rect className="halo b3" width="100%" height="100%" pathLength="100" /><rect className="halo b2" width="100%" height="100%" pathLength="100" /><rect className="halo b1" width="100%" height="100%" pathLength="100" /><rect className="halo b0" width="100%" height="100%" pathLength="100" /><rect className="core b6" width="100%" height="100%" pathLength="100" /><rect className="core b5" width="100%" height="100%" pathLength="100" /><rect className="core b4" width="100%" height="100%" pathLength="100" /><rect className="core b3" width="100%" height="100%" pathLength="100" /><rect className="core b2" width="100%" height="100%" pathLength="100" /><rect className="core b1" width="100%" height="100%" pathLength="100" /><rect className="core b0" width="100%" height="100%" pathLength="100" /></svg>
-        <div className="brand"><span className="wordmark">Rider</span><Logo size={34} href="/overview" /></div>
-        <TopNav main={nav.main} more={nav.more} />
-        <details className="me">
-          <summary aria-label="Account">{initials(profile?.full_name ?? auth.user.email ?? '')}</summary>
-          <div className="menu right">
+      <div className="frame">
+        <aside className="sidebar">
+          <div className="brand"><span className="wordmark">Rider</span><Logo size={34} href="/overview" /></div>
+          <SideNav main={nav.main} more={nav.more} />
+          <div className="acct">
+            <span className="av">{initials(profile?.full_name ?? auth.user.email ?? '')}</span>
             <div className="who"><b>{profile?.full_name ?? auth.user.email}</b><span>{profile ? profile.role.replace('_', ' ') : 'No role yet'}</span></div>
-            <form action={logout}><button className="ghost" style={{ width: '100%', minHeight: 40 }}>Sign out</button></form>
+            <form action={logout}><button className="ghost" aria-label="Sign out" title="Sign out"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M16 8l4 4-4 4M20 12H9" /></svg></button></form>
           </div>
-        </details>
-      </header>
+        </aside>
       <main className="main">
         {!profile?.active && (
           <div className="alert bad" role="alert">
@@ -68,6 +66,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         )}
         {children}
       </main>
+      </div>
     </div>
   );
 }

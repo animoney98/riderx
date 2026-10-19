@@ -12,7 +12,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <div className="aurora" aria-hidden="true"><i className="arc1" /><i className="arc2" /><i className="arc3" /><i className="glow g1" /><i className="glow g2" /><i className="glow g3" /><i className="shade" /></div>
         {children}
       </body>
     </html>

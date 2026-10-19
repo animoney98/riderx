@@ -23,7 +23,7 @@ export interface OverviewData {
   weeks: WeekRow[]; // newest first, only weeks with trips
 }
 
-const SPLIT_COLORS = ['#F4F6F6', '#F39A3D', '#7FA3A6', '#C2573A', '#8A9496'];
+const SPLIT_COLORS = ['#6C8CE0', '#F39A3D', '#4DB6A6', '#D9644A', '#9AA3B5'];
 
 export function OverviewView({ d }: { d: OverviewData }) {
   const sp = d.split;
