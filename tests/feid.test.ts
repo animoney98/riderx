@@ -23,7 +23,7 @@ describe('FE ID normalising', () => {
 });
 
 describe('parser with bare-number FE IDs', () => {
-  it('reads a numeric FE ID column as FE + number', () => {
+  it('adds 10,000 to a bare number and leaves FE-prefixed IDs alone', () => {
     const rows = [
       { dt: '20261012', trip_id: 'T1', orders: 1, pay: 50, delivered_at: 46307.5, pickup_distance: 2, drop_distance: 3, 'FE ID': 11568286 },
       { dt: '20261012', trip_id: 'T2', orders: 1, pay: 50, delivered_at: 46307.6, pickup_distance: 2, drop_distance: 3, 'FE ID': 'FE22222' },
@@ -32,7 +32,7 @@ describe('parser with bare-number FE IDs', () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'S');
     const res = parseZomatoWorkbook(XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }));
-    expect(res.rows.map((r) => r.feId)).toEqual(['FE11568286', 'FE22222']);
+    expect(res.rows.map((r) => r.feId)).toEqual(['FE11578286', 'FE22222']);
     expect(res.issues).toHaveLength(1);
     expect(res.issues[0].code).toBe('BAD_FE_ID');
   });

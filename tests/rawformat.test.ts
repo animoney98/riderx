@@ -22,10 +22,20 @@ describe('raw delivery file (ID column)', () => {
     const r = parseZomatoWorkbook(book([{ ...base, trip_id: 'A', ' id ': 100 }]));
     expect(r.rows[0].feId).toBe('FE10100');
   });
-  it('never adds 10,000 when FE ID is present, even with an ID column too', () => {
-    const r = parseZomatoWorkbook(book([{ ...base, trip_id: 'A', pay: 60, ID: 100, 'FE ID': 11568286 }]));
-    expect(r.format).toBe('fe_id');
+  it('FE ID column wins over ID; a bare number in it still gets 10,000', () => {
+    const r = parseZomatoWorkbook(book([{ ...base, trip_id: 'A', ID: 100, 'FE ID': 11558286 }]));
     expect(r.rows[0].feId).toBe('FE11568286');
+  });
+  it('never adds 10,000 to an ID that already starts with FE', () => {
+    const r = parseZomatoWorkbook(book([{ ...base, trip_id: 'A', 'FE ID': 'FE11568286' }, { ...base, trip_id: 'B', 'FE ID': 'fe 22' }]));
+    expect(r.format).toBe('fe_id');
+    expect(r.rows.map((x) => x.feId)).toEqual(['FE11568286', 'FE22']);
+  });
+  it('reads delivered_at written as text, and ignores the pay column (55)', () => {
+    const r = parseZomatoWorkbook(book([{ ...base, trip_id: 'A', 'FE ID': 11558286, pay: 55, delivered_at: '2026-10-14 15:56:54.000', pickup_distance: 0.11, drop_distance: 3.78 }]));
+    expect(r.issues).toEqual([]);
+    expect(r.rows[0].deliveredAt).toBe('2026-10-14T15:56:54');
+    expect(r.rows[0].zomatoPayPaise).toBe(6000);
   });
   it('flags a non-numeric ID and keeps going', () => {
     const r = parseZomatoWorkbook(book([{ ...base, trip_id: 'A', ID: 'abc' }, { ...base, trip_id: 'B', ID: 5 }]));

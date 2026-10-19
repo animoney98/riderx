@@ -68,7 +68,7 @@ export function UploadForm() {
             <div className="stat"><span>Dates</span><b style={{ fontSize: 15 }}>{res.dateRange}</b></div>
           </div>
 
-          {res.format === 'raw_id' && <div className="alert ok">Raw delivery file: 10,000 was added to each ID to make the FE ID. Because this file has no payout column, what Zomato pays RiderX is worked out as ₹60 + ₹5 per km over 6 + rain surge (₹25, or ₹35 if batched) + ₹30 batch fee.</div>}
+          {res.format === 'raw_id' && <div className="alert ok">10,000 was added to each plain-number ID to make the FE ID. This file has no Total Payout column, so what Zomato pays RiderX is worked out as ₹60 + ₹5 per km over 6 + rain surge (₹25, or ₹35 if batched) + ₹30 batch fee.</div>}
           {!!res.alreadyImported && <div className="alert warn">{res.alreadyImported} trips in this file were imported before. They will be skipped, never duplicated.</div>}
           {res.cycles?.map((c) => (
             <div key={c.start} className="note">Pay cycle {c.start} to {c.end} · scheduled payment Friday {c.payDate}</div>

@@ -1,9 +1,9 @@
 import { supabaseServer } from '@/lib/supabase-server';
 import { UploadForm } from './upload-form';
 
-const REQUIRED = ['dt', 'trip_id', 'orders', 'delivered_at', 'pickup_distance', 'drop_distance', 'isRaining', 'ID  (or FE ID)'];
+const REQUIRED = ['dt', 'trip_id', 'orders', 'delivered_at', 'pickup_distance', 'drop_distance', 'isRaining', 'FE ID (or ID)'];
 const OPTIONAL: [string, string][] = [
-  ['pay / Total Payout', "Needed only when the file has an FE ID column (Zomato's payout sheet). Raw delivery files have none, so what Zomato pays RiderX is worked out: ₹60 + ₹5 per km over 6 + rain surge (₹25, or ₹35 if batched) + ₹30 batch fee."],
+  ['pay / Total Payout', "The file's own pay column (₹55) is not used. If the file has no Total Payout column, what Zomato pays RiderX is worked out: ₹60 + ₹5 per km over 6 + rain surge (₹25, or ₹35 if batched) + ₹30 batch fee."],
   ['Total Payout', "Zomato's payout for the trip, including batch bonus. If missing, pay is used."],
   ['israining', '1 when it rained, used for the rain bonus.'],
   ['tip_amount', 'Stored but never counted in rider pay. Zomato pays tips to riders directly.'],
@@ -45,7 +45,7 @@ export default async function ImportsPage() {
           <ol className="steps">
             <li>Get Zomato's <b>per-trip payout sheet</b> as an Excel file (.xlsx or .xls, up to 10 MB). Only the first sheet is read.</li>
             <li>Click <b>Choose file</b>, then <b>Check file</b>. This saves nothing. It shows what would be imported and any problems.</li>
-            <li>Fix anything flagged. A raw file with an <code>ID</code> column gets 10,000 added to each ID to make the FE ID (ID 11558286 becomes FE11568286). If the file already has an <code>FE ID</code> column, nothing is added. Rows whose FE ID is not a registered rider are listed and left out; the rest of the file still imports. Add the rider on the Riders page and import the file again to bring those trips in.</li>
+            <li>Fix anything flagged. A plain number in the <code>FE ID</code> (or <code>ID</code>) column gets 10,000 added to make the FE ID (11558286 becomes FE11568286). An ID that already starts with FE is never changed. Rows whose FE ID is not a registered rider are listed and left out; the rest of the file still imports. Add the rider on the Riders page and import the file again to bring those trips in.</li>
             <li>Want the file with the calculated columns in Excel? Click <b>Download processed Excel</b>: one sheet with your original columns plus FE ID, Pay, Total Distance, Extra KM Charge, Rain Surge, Batched Order Fee and a Review Flag.</li>
             <li>Click <b>Import</b>. Trips are saved and earnings are calculated with the rates in force on each day.</li>
             <li>Go to <b>Salary &amp; Payroll</b> to review and approve the week.</li>

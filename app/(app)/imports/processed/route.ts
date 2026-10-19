@@ -42,14 +42,17 @@ export async function POST(req: Request) {
   const rI = idx('israining');
   const missing = [feI < 0 && idI < 0 ? 'ID (or FE ID)' : '', pI < 0 ? 'pickup distance' : '', dI < 0 ? 'drop distance' : '', oI < 0 ? 'orders' : '', rI < 0 ? 'isRaining' : ''].filter(Boolean);
   if (missing.length) return new Response(`Could not find these columns: ${missing.join(', ')}. Nothing was guessed.`, { status: 400 });
-  // FE ID wins when present, so a file is never incremented twice.
-  const rawFormat = feI < 0;
+  // The identifier column is "FE ID" when present, otherwise "ID". A bare number gets 10,000 added; a value that starts with FE is final.
+  const srcI = feI >= 0 ? feI : idI;
+  const isFeText = (v: unknown) => /^FE-?\s*\d+$/i.test(String(v ?? '').trim());
+  const rawFormat = data.some((r) => !isFeText(r[srcI]));
 
   // Which of the resulting FE IDs are registered riders.
   const feOf = (r: unknown[]): number | null => {
-    const v = r[rawFormat ? idI : feI];
-    const m = String(v ?? '').trim().replace(/\s+/g, '').match(/^(?:FE-?)?(\d+)(?:\.0+)?$/i);
-    return m ? Number(m[1]) + (rawFormat ? 10000 : 0) : null;
+    const t = String(r[srcI] ?? '').trim().replace(/\s+/g, '');
+    if (isFeText(t)) return Number(t.replace(/\D/g, ''));
+    const m = t.match(/^(\d+)(?:\.0+)?$/);
+    return m ? Number(m[1]) + 10000 : null;
   };
   const wanted = [...new Set(data.map(feOf).filter((n): n is number => n !== null).map((n) => `FE${n}`))];
   const known = new Set<string>();
@@ -63,11 +66,11 @@ export async function POST(req: Request) {
   const n0 = headers.length;
   const calcHeaders = [...(rawFormat ? ['FE ID'] : []), 'Pay', 'Total Distance', 'Extra KM Charge', 'Rain Surge', 'Batched Order Fee', 'Review Flag'];
   // The raw ID stays where it was, labelled so it is not mistaken for the FE ID.
-  const shown = headers.map((h, i) => (rawFormat && i === idI ? 'Raw ID' : h));
+  const shown = headers.map((h, i) => (rawFormat && i === srcI ? 'Raw ID' : h));
   sheet.addRow([...shown, ...calcHeaders]);
 
   const col = (i: number) => sheet.getColumn(i + 1).letter;
-  const cFe = rawFormat ? n0 : feI;
+  const cFe = rawFormat ? n0 : srcI;
   const cPay = n0 + (rawFormat ? 1 : 0);
   const cTd = cPay + 1, cEx = cPay + 2, cRain = cPay + 3, cBatch = cPay + 4, cFlag = cPay + 5;
 
@@ -75,8 +78,8 @@ export async function POST(req: Request) {
     const row = k + 2;
     const flags: string[] = [];
     const fe = feOf(r);
-    if (fe === null) flags.push(`ID "${String(r[rawFormat ? idI : feI] ?? '')}" is not a number`);
-    else if (!known.has(`FE${fe}`)) flags.push(`${rawFormat ? `Raw ID ${String(r[idI]).trim()} -> ` : ''}FE ID ${fe} is not a registered rider`);
+    if (fe === null) flags.push(`ID "${String(r[srcI] ?? '')}" is not a number`);
+    else if (!known.has(`FE${fe}`)) flags.push(`${rawFormat ? `Raw ID ${String(r[srcI]).trim()} -> ` : ''}FE ID ${fe} is not a registered rider`);
     const p = typeof r[pI] === 'number' ? (r[pI] as number) : Number(String(r[pI] ?? '').trim() === '' ? NaN : r[pI]);
     const d = typeof r[dI] === 'number' ? (r[dI] as number) : Number(String(r[dI] ?? '').trim() === '' ? NaN : r[dI]);
     const o = Number(r[oI]);
@@ -91,7 +94,7 @@ export async function POST(req: Request) {
     const P = `${col(pI)}${row}`, D = `${col(dI)}${row}`, O = `${col(oI)}${row}`, R = `${col(rI)}${row}`, T = `${col(cTd)}${row}`;
     const cells: unknown[] = [...r.slice(0, n0).map((v) => (v === '' ? null : v))];
     while (cells.length < n0) cells.push(null);
-    if (rawFormat) cells.push({ formula: `IF(ISNUMBER(${col(idI)}${row}),${col(idI)}${row}+10000,"")`, result: fe ?? '' });
+    if (rawFormat) cells.push({ formula: `IF(ISNUMBER(${col(srcI)}${row}),${col(srcI)}${row}+10000,"")`, result: fe ?? '' });
     cells.push(60);
     cells.push({ formula: `IF(AND(ISNUMBER(${P}),ISNUMBER(${D})),${P}+${D},"")`, result: td ?? '' });
     cells.push({ formula: `IF(ISNUMBER(${T}),MAX(0,${T}-6)*5,"")`, result: ex ?? '' });
