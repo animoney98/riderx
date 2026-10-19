@@ -75,9 +75,9 @@ describe('rider rain pay with a batched-trip rate', () => {
     const out = calculateTrips([t('1', 1, true), t('2', 2, true), t('3', 1, false)], card);
     expect(out.map((e) => e.rainPaise)).toEqual([2500, 3500, 0]);
   });
-  it('without a batched rate it stays per order', () => {
-    const out = calculateTrips([t('2', 2, true)], { ...DEFAULT_RATE_CARD, rainBonusPaisePerOrder: 2500 });
-    expect(out[0].rainPaise).toBe(5000);
+  it('card values cannot change rain pay', () => {
+    const out = calculateTrips([t('1', 1, true), t('2', 2, true)], { ...DEFAULT_RATE_CARD, rainBonusPaisePerOrder: 0, rainBonusBatchedTripPaise: 0 });
+    expect(out.map((e) => e.rainPaise)).toEqual([2500, 3500]);
   });
   it('rider base stays 50 then 60 with batch +30', () => {
     const out = calculateTrips([t('1', 2, false)], card);

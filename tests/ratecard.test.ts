@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildRateCard, rupeesToPaise, kmToKm100 } from '../src/engine/rateCardForm';
 import { calculateTrips } from '../src/engine/payout';
 
-const base = { name: 'RiderX default', version: 2, firstSlabOrders: '25', firstSlabRate: '50', laterRate: '60', includedKm: '6', extraKmRate: '5', batchBonus: '30', rainPerOrder: '0', festivalPerOrder: '0', batchedTripBaseOrders: 1 };
+const base = { name: 'RiderX default', version: 2, firstSlabOrders: '25', firstSlabRate: '50', laterRate: '60', includedKm: '6', extraKmRate: '5', batchBonus: '30', festivalPerOrder: '0', batchedTripBaseOrders: 1 };
 
 describe('rate card form', () => {
   it('parses rupees and km exactly', () => {
@@ -19,10 +19,10 @@ describe('rate card form', () => {
     expect(c.includedKm100).toBe(600);
     expect(c.batchedTripBaseOrders).toBe(1);
   });
-  it('rain bonus flows into earnings', () => {
-    const c = buildRateCard({ ...base, rainPerOrder: '10' });
+  it('rain is fixed at 25 whatever the form says', () => {
+    const c = buildRateCard({ ...base, rainPerOrder: '10', rainBatchedTrip: '99' });
     const [e] = calculateTrips([{ tripId: 'a', riderKey: 'r', operationalDate: '2026-10-12', completedAt: '2026-10-12T10:00:00', pickupKm100: 100, dropKm100: 100, ordersInTrip: 1, isRaining: true }], c);
-    expect(e.totalPaise).toBe(5000 + 1000);
+    expect(e.totalPaise).toBe(5000 + 2500);
   });
   it('rejects a bad first slab', () => expect(() => buildRateCard({ ...base, firstSlabOrders: '0' })).toThrow());
 });

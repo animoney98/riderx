@@ -39,9 +39,11 @@ describe('payout engine (spec examples)', () => {
     expect(e.firstRank).toBe(25);
     expect(e.lastRank).toBe(26);
   });
-  it('rain bonus is per order and only when raining', () => {
-    const card = { ...DEFAULT_RATE_CARD, rainBonusPaisePerOrder: 2500 };
-    expect(total(mk(2, { isRaining: true }), card)).toBe(2 * (5000 + 2500));
+  it('rain pay is fixed: 25 per rainy single trip, 35 per rainy batched trip, nothing when dry', () => {
+    const card = DEFAULT_RATE_CARD;
+    expect(total(mk(1, { isRaining: true }), card)).toBe(5000 + 2500);
+    expect(total(mk(1, { isRaining: true, ordersInTrip: 2 }), card)).toBe(5000 + 3000 + 3500);
+    expect(total(mk(1, { ordersInTrip: 2 }), card)).toBe(5000 + 3000);
     expect(total(mk(2), card)).toBe(2 * 5000);
   });
   it('daily slab resets each day and each rider', () => {

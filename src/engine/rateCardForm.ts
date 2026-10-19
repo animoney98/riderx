@@ -1,4 +1,4 @@
-import { validateRateCard, type RateCard } from './payout';
+import { validateRateCard, RAIN_SINGLE_PAISE, RAIN_BATCHED_PAISE, type RateCard } from './payout';
 
 /** Rupee text such as "50", "2,500" or "12.5" -> integer paise. Throws on anything else. */
 export function rupeesToPaise(text: string, label: string): number {
@@ -25,8 +25,8 @@ export interface RateCardInput {
   includedKm: string;
   extraKmRate: string;
   batchBonus: string;
-  rainPerOrder: string;
-  /** Optional. One amount for a raining batched trip; blank = rain bonus per order times its orders. */
+  /** Ignored: rain pay is fixed at 25 / 35 in the engine. */
+  rainPerOrder?: string;
   rainBatchedTrip?: string;
   festivalPerOrder: string;
   batchedTripBaseOrders: number;
@@ -42,8 +42,8 @@ export function buildRateCard(i: RateCardInput): RateCard {
     includedKm100: kmToKm100(i.includedKm, 'Included distance'),
     extraKmRatePaise: rupeesToPaise(i.extraKmRate, 'Extra km rate'),
     batchBonusPaise: rupeesToPaise(i.batchBonus, 'Batch bonus'),
-    rainBonusPaisePerOrder: rupeesToPaise(i.rainPerOrder, 'Rain bonus'),
-    ...(i.rainBatchedTrip?.trim() ? { rainBonusBatchedTripPaise: rupeesToPaise(i.rainBatchedTrip, 'Rain bonus for a batched trip') } : {}),
+    rainBonusPaisePerOrder: RAIN_SINGLE_PAISE,
+    rainBonusBatchedTripPaise: RAIN_BATCHED_PAISE,
     festivalBonusPaisePerOrder: rupeesToPaise(i.festivalPerOrder, 'Festival bonus'),
     batchedTripBaseOrders: i.batchedTripBaseOrders,
   };

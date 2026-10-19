@@ -26,10 +26,6 @@ export function findExceptions(records: TripRecord[], card: RateCard): Exception
       out.push({ type: 'Source vs calculated distance pay', who: `${r.riderName} (${r.feId})`, date: r.date, description: `Trip ${r.tripId}: Zomato distance amount ${rs(r.zomatoDistancePaise).toFixed(2)}, calculated ${rs(r.distancePaise).toFixed(2)}`, amountPaise: r.distancePaise - r.zomatoDistancePaise, resolution: 'Open' });
     }
   }
-  const rainy = records.filter((r) => r.isRaining);
-  if (rainy.length && card.rainBonusPaisePerOrder === 0) {
-    out.push({ type: 'Rain bonus rate not set', who: 'All riders', date: '', description: `${rainy.length} trips are marked raining by Zomato but the rain bonus rate is ₹0, so no rain bonus is included`, amountPaise: null, resolution: 'Open: set a rain rate in the rate card' });
-  }
   return out;
 }
 

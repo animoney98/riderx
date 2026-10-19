@@ -13,9 +13,8 @@ export interface RateCard {
   extraKmRatePaise: number;
   /** Paid once per batched trip. */
   batchBonusPaise: number;
-  /** Rain bonus per order in a trip flagged as raining. Varies; set per rate card. */
+  /** Kept for old saved cards. Rain pay is now fixed in the engine (RAIN_SINGLE_PAISE / RAIN_BATCHED_PAISE) and these two values are ignored. */
   rainBonusPaisePerOrder: number;
-  /** When set, a raining batched trip pays this one amount in total instead of the per-order rain bonus times its orders (e.g. 25 per rainy trip, 35 for a rainy batched trip). */
   rainBonusBatchedTripPaise?: number;
   /** Festival bonus per order (0 when no festival). */
   festivalBonusPaisePerOrder: number;
@@ -25,6 +24,10 @@ export interface RateCard {
    */
   batchedTripBaseOrders?: number;
 }
+
+/** Rain pay is permanent: ₹25 for a rainy single-order trip, ₹35 in total for a rainy batched trip. Not changed by rate cards. */
+export const RAIN_SINGLE_PAISE = 2500;
+export const RAIN_BATCHED_PAISE = 3500;
 
 export const DEFAULT_RATE_CARD: RateCard = {
   name: 'RiderX default',
@@ -36,7 +39,8 @@ export const DEFAULT_RATE_CARD: RateCard = {
   includedKm100: 600,
   extraKmRatePaise: 500,
   batchBonusPaise: 3000,
-  rainBonusPaisePerOrder: 0,
+  rainBonusPaisePerOrder: RAIN_SINGLE_PAISE,
+  rainBonusBatchedTripPaise: RAIN_BATCHED_PAISE,
   festivalBonusPaisePerOrder: 0,
   batchedTripBaseOrders: 1,
 };
@@ -132,7 +136,7 @@ export function calculateTrips(trips: Trip[], card: RateCard): TripEarning[] {
       const distancePaise = divRound(extraKm100 * card.extraKmRatePaise, 100);
       const batched = t.ordersInTrip > 1;
       const batchBonusPaise = batched ? card.batchBonusPaise : 0;
-      const rainPaise = !t.isRaining ? 0 : batched && card.rainBonusBatchedTripPaise !== undefined ? card.rainBonusBatchedTripPaise : card.rainBonusPaisePerOrder * t.ordersInTrip;
+      const rainPaise = !t.isRaining ? 0 : batched ? RAIN_BATCHED_PAISE : RAIN_SINGLE_PAISE;
       const festivalPaise = card.festivalBonusPaisePerOrder * t.ordersInTrip;
       out.push({
         tripId: t.tripId,
