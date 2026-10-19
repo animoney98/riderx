@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { AuthShell } from '../auth-shell';
-import { supabaseAdmin } from '@/lib/supabase-admin';
-import { last10, parseIdentifier, riderEmail } from '@/src/engine/riderLogin';
+import { signInRider } from '@/lib/rider-signin';
 
 function e164(raw: string): string | null {
   const d = raw.replace(/\D/g, '');
@@ -15,25 +14,9 @@ const WRONG = '/rider-login?error=Wrong+FE+ID,+mobile+number+or+PIN';
 
 async function pinLogin(formData: FormData) {
   'use server';
-  const id = parseIdentifier(String(formData.get('who') ?? ''));
-  const pin = String(formData.get('pin') ?? '').trim();
-  if (!id || !/^\d{6}$/.test(pin)) redirect(WRONG);
-  const admin = supabaseAdmin();
-  if (!admin) redirect('/rider-login?error=Sign+in+is+not+switched+on+yet.+Please+ask+RiderX');
-  // Find the rider without revealing whether the FE ID or phone exists: every failure shows the same message.
-  let riderId: string | null = null;
-  if (id!.kind === 'fe') {
-    const { data } = await admin!.from('rider_platform_accounts').select('rider_id').eq('platform', 'zomato').eq('platform_rider_id', id!.value);
-    if (data?.length === 1) riderId = data[0].rider_id as string;
-  } else {
-    const { data } = await admin!.from('riders').select('id, phone').not('phone', 'is', null);
-    const hits = (data ?? []).filter((r) => last10(r.phone as string) === id!.value);
-    if (hits.length === 1) riderId = hits[0].id as string;
-  }
-  if (!riderId) { console.error('rider-login: no single rider found for', id!.kind); redirect(WRONG); }
-  const sb = await supabaseServer();
-  const { error } = await sb.auth.signInWithPassword({ email: riderEmail(riderId!), password: pin });
-  if (error) { console.error('rider-login: password check failed:', error.message); redirect(WRONG); }
+  const res = await signInRider(String(formData.get('who') ?? ''), String(formData.get('pin') ?? ''));
+  if (res === 'off') redirect('/rider-login?error=Sign+in+is+not+switched+on+yet.+Please+ask+RiderX');
+  if (res) redirect(WRONG);
   redirect('/rider');
 }
 
