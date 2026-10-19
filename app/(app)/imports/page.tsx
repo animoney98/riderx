@@ -1,5 +1,6 @@
 import { supabaseServer } from '@/lib/supabase-server';
 import { UploadForm } from './upload-form';
+import { undoImport } from './actions';
 
 const REQUIRED = ['dt', 'trip_id', 'orders', 'delivered_at', 'pickup_distance', 'drop_distance', 'isRaining', 'FE ID (or ID)'];
 const OPTIONAL: [string, string][] = [
@@ -12,9 +13,12 @@ const OPTIONAL: [string, string][] = [
 const ist = (iso: string) => new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
 const day = (d: string | null) => (d ? new Date(d + 'T00:00:00Z').toLocaleDateString('en-IN', { timeZone: 'UTC', day: 'numeric', month: 'short' }) : '—');
 
-export default async function ImportsPage() {
+export default async function ImportsPage({ searchParams }: { searchParams: Promise<{ error?: string; undone?: string }> }) {
+  const sp = await searchParams;
   const sb = await supabaseServer();
   const { data: auth } = await sb.auth.getUser();
+  const { data: me } = await sb.from('profiles').select('role, active').eq('id', auth.user?.id ?? '').maybeSingle();
+  const isAdmin = !!me?.active && me.role === 'super_admin';
   const { data: batches } = await sb.from('import_batches')
     .select('id, filename, file_checksum, imported_by, imported_at, status, source_period_start, source_period_end, total_rows, inserted_rows, skipped_rows, error_count')
     .order('imported_at', { ascending: false }).limit(50);
@@ -37,6 +41,8 @@ export default async function ImportsPage() {
         <div className="note" style={{ textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>Import Center</div>
         <h1>Import Zomato data</h1>
       </div>
+      {sp.error && <div className="alert bad" role="alert">{sp.error}</div>}
+      {sp.undone && <div className="alert ok" role="status">{sp.undone}</div>}
       <UploadForm />
 
       <section className="card">
@@ -70,7 +76,7 @@ export default async function ImportsPage() {
         {!rows.length ? <p className="note">No files imported yet.</p> : (
           <div className="tbl">
             <table>
-              <thead><tr><th>Imported</th><th>File</th><th>Trip dates</th><th className="n">Rows in file</th><th className="n">New trips saved</th><th className="n">Already saved</th><th className="n">Rows with problems</th><th>By</th></tr></thead>
+              <thead><tr><th>Imported</th><th>File</th><th>Trip dates</th><th className="n">Rows in file</th><th className="n">New trips saved</th><th className="n">Already saved</th><th className="n">Rows with problems</th><th>By</th><th></th></tr></thead>
               <tbody>
                 {withRepeat.map(({ b, repeat }) => (
                   <tr key={b.id as string}>
@@ -82,13 +88,27 @@ export default async function ImportsPage() {
                     <td className="n">{b.skipped_rows as number}</td>
                     <td className="n">{(b.error_count as number) > 0 ? <span className="pill p-warn">{b.error_count as number}</span> : '0'}</td>
                     <td>{b.imported_by === auth.user?.id ? 'You' : who.get(b.imported_by as string) ?? 'Team member'}</td>
+                    <td>
+                      {b.status === 'rolled_back' ? <span className="pill p-warn">Undone</span> : isAdmin && (b.inserted_rows as number) > 0 && (
+                        <details className="undo">
+                          <summary>Undo</summary>
+                          <form action={undoImport} className="undoform">
+                            <input type="hidden" name="batch" value={b.id as string} />
+                            <p className="note">Removes the {b.inserted_rows as number} trips this file added and their earnings. Trips from other files stay. Not allowed once the week is approved.</p>
+                            <label>Why are you undoing it?<input name="reason" required minLength={5} placeholder="e.g. wrong file uploaded" /></label>
+                            <label className="check"><input type="checkbox" name="confirm" /> Yes, remove these trips</label>
+                            <button type="submit" className="ghost">Undo this import</button>
+                          </form>
+                        </details>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
-        <p className="note">Every import is kept permanently. “Already saved” counts trips that were in the system before this file, so a repeat upload shows 0 new trips.</p>
+        <p className="note">Every import is kept permanently, including ones you undo (marked Undone, with a copy of the removed trips and the reason in the Audit Log). “Already saved” counts trips that were in the system before this file, so a repeat upload shows 0 new trips.</p>
       </section>
     </>
   );

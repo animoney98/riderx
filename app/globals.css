@@ -517,3 +517,11 @@ details summary{color:var(--link)}
 
 .ov{grid-template-columns:minmax(0,1fr) 310px}
 @media (max-width:1180px){.ov{grid-template-columns:minmax(0,1fr)}}
+
+/* Undo import */
+details.undo summary{cursor:pointer;color:var(--link);font-size:13px;font-weight:600;list-style:none}
+details.undo summary::-webkit-details-marker{display:none}
+details.undo[open]{min-width:260px}
+.undoform{display:flex;flex-direction:column;gap:10px;margin-top:10px;white-space:normal;min-width:260px;padding:12px;border-radius:16px;background:rgba(255,255,255,.7);border:1px solid var(--line)}
+.undoform .check{flex-direction:row;align-items:center;gap:8px;font-weight:500}
+.undoform input[type=checkbox]{width:18px;height:18px;min-height:0;padding:0}

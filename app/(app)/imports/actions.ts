@@ -1,4 +1,6 @@
 'use server';
+import { redirect } from 'next/navigation';
+import { revalidatePath } from 'next/cache';
 import { supabaseServer } from '@/lib/supabase-server';
 import { parseZomatoWorkbook, toTrips } from '@/src/import/zomatoParser';
 import { createHash } from 'node:crypto';
@@ -163,4 +165,30 @@ export async function importAction(_prev: Preview | null, formData: FormData): P
       tipsIgnored: formatINR(sum(parsed.rows.map((r) => r.tipPaise))),
     },
   };
+}
+
+/** Undo an import: removes the trips that file added (Admin only, written reason), then recalculates the days it touched so other files' daily order counts stay right. */
+export async function undoImport(formData: FormData) {
+  const batch = String(formData.get('batch') ?? '');
+  const reason = String(formData.get('reason') ?? '').trim();
+  const back = (q: string): never => redirect(`/imports?${q}`);
+  if (formData.get('confirm') !== 'on') back('error=' + encodeURIComponent('Tick the box to confirm the undo'));
+  const sb = await supabaseServer();
+  const { data, error } = await sb.rpc('undo_import', { p_batch: batch, p_reason: reason });
+  if (error) back('error=' + encodeURIComponent(error.message));
+  const r = data as { removed: number; from: string; to: string; fe_ids: string[] };
+  // Riders who also have trips from other files on those days: their order ranks may have changed.
+  let note = '';
+  try {
+    const days: string[] = [];
+    for (let d = new Date(r.from + 'T00:00:00Z'); d <= new Date(r.to + 'T00:00:00Z'); d = new Date(d.getTime() + 86400000)) days.push(d.toISOString().slice(0, 10));
+    for (const d of days) {
+      const c = await loadRateCard(sb, d);
+      if (c.id) await recalculateEarnings(sb, r.fe_ids, d, d, c.card, c.id);
+    }
+  } catch (e) {
+    note = ' The trips were removed, but earnings for other files could not be recalculated: ' + (e as Error).message + '. Import one of those files again to recalculate.';
+  }
+  revalidatePath('/imports');
+  back('undone=' + encodeURIComponent(`Removed ${r.removed} trips added by that file.${note}`));
 }

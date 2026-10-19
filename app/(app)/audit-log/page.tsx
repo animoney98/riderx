@@ -4,6 +4,7 @@ import { supabaseServer } from '@/lib/supabase-server';
 const PAGE = 50;
 const LABELS: Record<string, string> = {
   'import.commit': 'Zomato file imported',
+  'import.undo': 'Zomato import undone',
   'rider.create': 'Rider added',
   'rider.update': 'Rider details changed',
   'rider.login_linked': 'Rider phone linked',
