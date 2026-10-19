@@ -20,6 +20,18 @@ export function UploadForm() {
     fd.set('checksum', res?.checksum ?? '');
     startTransition(() => action(fd));
   }
+  async function download() {
+    if (!file) { setLocalError('Choose an Excel file first.'); return; }
+    setLocalError('');
+    const fd = new FormData();
+    fd.set('file', file);
+    const r = await fetch('/imports/processed', { method: 'POST', body: fd });
+    if (!r.ok) { setLocalError(await r.text()); return; }
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement('a');
+    a.href = url; a.download = file.name.replace(/\.xlsx?$/i, '') + '-processed.xlsx'; a.click();
+    URL.revokeObjectURL(url);
+  }
   return (
     <>
       <form onSubmit={submit} className="card">
@@ -27,6 +39,7 @@ export function UploadForm() {
         <div className="row">
           <label>Excel file (.xlsx)<input type="file" accept=".xlsx,.xls" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></label>
           <button type="submit" name="intent" value="preview" disabled={pending}>{pending ? 'Working…' : 'Check file'}</button>
+          <button type="button" className="ghost" onClick={download}>Download processed Excel</button>
           {res?.ok && res.canImport && !res.committed && (
             <button type="submit" name="intent" value="commit" disabled={pending}>Import {res.validRows} trips</button>
           )}
@@ -55,6 +68,7 @@ export function UploadForm() {
             <div className="stat"><span>Dates</span><b style={{ fontSize: 15 }}>{res.dateRange}</b></div>
           </div>
 
+          {res.format === 'raw_id' && <div className="alert ok">Raw delivery file: 10,000 was added to each ID to make the FE ID. Because this file has no payout column, what Zomato pays RiderX is worked out as ₹60 + ₹5 per km over 6 + rain surge (₹25, or ₹35 if batched) + ₹30 batch fee.</div>}
           {!!res.alreadyImported && <div className="alert warn">{res.alreadyImported} trips in this file were imported before. They will be skipped, never duplicated.</div>}
           {res.cycles?.map((c) => (
             <div key={c.start} className="note">Pay cycle {c.start} to {c.end} · scheduled payment Friday {c.payDate}</div>
@@ -90,7 +104,7 @@ export function UploadForm() {
               <h2>Problems found</h2>
               <div className="tbl">
                 <table><thead><tr><th>Row</th><th>Code</th><th>Problem</th></tr></thead>
-                  <tbody>{res.issues.slice(0, 50).map((i) => <tr key={i.row + i.code}><td>{i.row}</td><td>{i.code}</td><td>{i.message}</td></tr>)}</tbody></table>
+                  <tbody>{res.issues.slice(0, 50).map((i, n) => <tr key={`${n}-${i.row}-${i.code}`}><td>{i.row}</td><td>{i.code}</td><td>{i.message}</td></tr>)}</tbody></table>
               </div>
             </section>
           )}

@@ -15,6 +15,8 @@ export interface RateCard {
   batchBonusPaise: number;
   /** Rain bonus per order in a trip flagged as raining. Varies; set per rate card. */
   rainBonusPaisePerOrder: number;
+  /** When set, a raining batched trip pays this one amount in total instead of the per-order rain bonus times its orders (e.g. 25 per rainy trip, 35 for a rainy batched trip). */
+  rainBonusBatchedTripPaise?: number;
   /** Festival bonus per order (0 when no festival). */
   festivalBonusPaisePerOrder: number;
   /**
@@ -130,7 +132,7 @@ export function calculateTrips(trips: Trip[], card: RateCard): TripEarning[] {
       const distancePaise = divRound(extraKm100 * card.extraKmRatePaise, 100);
       const batched = t.ordersInTrip > 1;
       const batchBonusPaise = batched ? card.batchBonusPaise : 0;
-      const rainPaise = t.isRaining ? card.rainBonusPaisePerOrder * t.ordersInTrip : 0;
+      const rainPaise = !t.isRaining ? 0 : batched && card.rainBonusBatchedTripPaise !== undefined ? card.rainBonusBatchedTripPaise : card.rainBonusPaisePerOrder * t.ordersInTrip;
       const festivalPaise = card.festivalBonusPaisePerOrder * t.ordersInTrip;
       out.push({
         tripId: t.tripId,

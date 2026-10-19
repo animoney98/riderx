@@ -34,7 +34,7 @@ async function createVersion(formData: FormData) {
       name: prev.name, version: (latest!.version as number) + 1,
       firstSlabOrders: String(formData.get('firstSlabOrders')), firstSlabRate: String(formData.get('firstSlabRate')), laterRate: String(formData.get('laterRate')),
       includedKm: String(formData.get('includedKm')), extraKmRate: String(formData.get('extraKmRate')), batchBonus: String(formData.get('batchBonus')),
-      rainPerOrder: String(formData.get('rain')), festivalPerOrder: String(formData.get('festival')), batchedTripBaseOrders: prev.batchedTripBaseOrders ?? 1,
+      rainPerOrder: String(formData.get('rain')), rainBatchedTrip: String(formData.get('rainBatched') ?? ''), festivalPerOrder: String(formData.get('festival')), batchedTripBaseOrders: prev.batchedTripBaseOrders ?? 1,
     });
   } catch (e) { return back(`error=${encodeURIComponent((e as Error).message)}`); }
 
@@ -94,7 +94,7 @@ async function createSpecialDay(formData: FormData) {
       name: SPECIAL_PREFIX + date, version: 1,
       firstSlabOrders: String(std.card.slabs[0].upToOrder), firstSlabRate: String(formData.get('firstSlabRate')), laterRate: String(formData.get('laterRate')),
       includedKm: String(formData.get('includedKm')), extraKmRate: String(formData.get('extraKmRate')), batchBonus: String(formData.get('batchBonus')),
-      rainPerOrder: String(formData.get('rain')), festivalPerOrder: String(formData.get('festival')), batchedTripBaseOrders: std.card.batchedTripBaseOrders ?? 1,
+      rainPerOrder: String(formData.get('rain')), rainBatchedTrip: String(formData.get('rainBatched') ?? ''), festivalPerOrder: String(formData.get('festival')), batchedTripBaseOrders: std.card.batchedTripBaseOrders ?? 1,
     });
   } catch (e) { return back(`error=${encodeURIComponent((e as Error).message)}`); }
   const { count } = await sb.from('rate_cards').select('id', { count: 'exact', head: true }).eq('name', card.name);
@@ -171,7 +171,7 @@ export default async function RateCardsPage({ searchParams }: { searchParams: Pr
                 <tr key={r.id as string}>
                   <td><b>v{r.version as number}</b></td><td>{r.effective_start as string}</td><td>{(r.effective_end as string | null) ?? 'Current'}</td><td>{slab(c)}</td>
                   <td>{c.includedKm100 / 100} km</td><td>{formatINR(c.extraKmRatePaise)}/km</td><td>{formatINR(c.batchBonusPaise)}</td>
-                  <td>{formatINR(c.rainBonusPaisePerOrder)}</td><td>{formatINR(c.festivalBonusPaisePerOrder)}</td>
+                  <td>{formatINR(c.rainBonusPaisePerOrder)}{c.rainBonusBatchedTripPaise !== undefined && ` (${formatINR(c.rainBonusBatchedTripPaise)} batched)`}</td><td>{formatINR(c.festivalBonusPaisePerOrder)}</td>
                 </tr>
               );
             })}
@@ -198,6 +198,7 @@ export default async function RateCardsPage({ searchParams }: { searchParams: Pr
           </div>
           <div className="row">
             <label>Rain bonus per order (₹)<input name="rain" required defaultValue={rupees(cur.rainBonusPaisePerOrder)} inputMode="decimal" /></label>
+            <label>Rain bonus, batched trip (₹)<input name="rainBatched" defaultValue={cur.rainBonusBatchedTripPaise === undefined ? '' : rupees(cur.rainBonusBatchedTripPaise)} inputMode="decimal" placeholder="Same as per order × 2" /></label>
             <label>Festival bonus per order (₹)<input name="festival" required defaultValue={rupees(cur.festivalBonusPaisePerOrder)} inputMode="decimal" /></label>
           </div>
           <p className="note">The new rates apply to every trip from the start date onwards, and those weeks are recalculated. Weeks that are already approved cannot be changed, so the start date must be after the last approved week. The rain bonus is paid on orders Zomato marks as rain orders.</p>
@@ -216,7 +217,7 @@ export default async function RateCardsPage({ searchParams }: { searchParams: Pr
               const c = r.configuration as RateCard;
               return (
                 <tr key={r.id as string}>
-                  <td><b>{r.effective_start as string}</b></td><td>{slab(c)}</td><td>{formatINR(c.batchBonusPaise)}</td><td>{formatINR(c.rainBonusPaisePerOrder)}</td><td>{formatINR(c.festivalBonusPaisePerOrder)}</td>
+                  <td><b>{r.effective_start as string}</b></td><td>{slab(c)}</td><td>{formatINR(c.batchBonusPaise)}</td><td>{formatINR(c.rainBonusPaisePerOrder)}{c.rainBonusBatchedTripPaise !== undefined && ` (${formatINR(c.rainBonusBatchedTripPaise)} batched)`}</td><td>{formatINR(c.festivalBonusPaisePerOrder)}</td>
                   <td>{isAdmin && <form action={cancelSpecialDay}><input type="hidden" name="id" value={r.id as string} /><button type="submit" className="ghost" style={{ minHeight: 36 }}>Cancel</button></form>}</td>
                 </tr>
               );
@@ -238,6 +239,7 @@ export default async function RateCardsPage({ searchParams }: { searchParams: Pr
               <label>Distance included (km)<input name="includedKm" required defaultValue={cur.includedKm100 / 100} inputMode="decimal" /></label>
               <label>Batch bonus (₹)<input name="batchBonus" required defaultValue={rupees(cur.batchBonusPaise)} inputMode="decimal" /></label>
               <label>Rain bonus per order (₹)<input name="rain" required defaultValue={rupees(cur.rainBonusPaisePerOrder)} inputMode="decimal" /></label>
+            <label>Rain bonus, batched trip (₹)<input name="rainBatched" defaultValue={cur.rainBonusBatchedTripPaise === undefined ? '' : rupees(cur.rainBonusBatchedTripPaise)} inputMode="decimal" placeholder="Same as per order × 2" /></label>
               <label>Festival bonus per order (₹)<input name="festival" required defaultValue={rupees(cur.festivalBonusPaisePerOrder)} inputMode="decimal" /></label>
             </div>
             <p className="note">These rates apply only to orders delivered on that date, until 12 midnight. The next day goes back to the standard rates automatically. The number of orders at the first rate stays the same as the standard ({cur.slabs[0].upToOrder}). A day in an already approved week cannot be changed. The Salary & Payroll columns “at ₹50 / at ₹60” count orders by position (first {cur.slabs[0].upToOrder} of the day or later), so on a special day the money in those columns follows the special rate.</p>

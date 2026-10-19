@@ -16,6 +16,7 @@ export interface Preview {
   filename?: string;
   totalRows?: number;
   validRows?: number;
+  format?: 'fe_id' | 'raw_id';
   issues?: { row: number; code: string; message: string }[];
   batched?: number;
   dateRange?: string;
@@ -37,7 +38,7 @@ export async function importAction(_prev: Preview | null, formData: FormData): P
 
   const bytes = Buffer.from(await file.arrayBuffer());
   const checksum = createHash('sha256').update(bytes).digest('hex');
-  let parsed;
+  let parsed: ReturnType<typeof parseZomatoWorkbook>;
   try {
     parsed = parseZomatoWorkbook(bytes);
   } catch {
@@ -48,14 +49,26 @@ export async function importAction(_prev: Preview | null, formData: FormData): P
   }
 
   const sb = await supabaseServer();
-  const feIds = [...new Set(parsed.rows.map((r) => r.feId))];
+  const allFeIds = [...new Set(parsed.rows.map((r) => r.feId))];
   const { data: accounts } = await sb
     .from('rider_platform_accounts')
     .select('platform_rider_id, riders(full_name)')
     .eq('platform', 'zomato')
-    .in('platform_rider_id', feIds);
+    .in('platform_rider_id', allFeIds);
   const nameByFe = new Map((accounts ?? []).map((a) => [a.platform_rider_id, (a.riders as unknown as { full_name: string } | null)?.full_name ?? '']));
 
+  // A row whose FE ID is not a registered rider is flagged with its raw ID and left out; the rest of the file carries on.
+  const skipped = parsed.rows.filter((r) => !nameByFe.has(r.feId));
+  if (skipped.length) {
+    parsed = {
+      ...parsed,
+      rows: parsed.rows.filter((r) => nameByFe.has(r.feId)),
+      issues: [...parsed.issues, ...skipped.map((r) => ({ row: r.row, code: 'UNREGISTERED_FE', message: `Trip ${r.tripId}: ID ${r.rawId} gives FE ID ${r.feId}, which is not a registered rider. Add them on the Riders page and import again; this trip was not saved.` }))],
+    };
+    if (!parsed.rows.length) return { ok: false, filename: file.name, totalRows: parsed.totalRows, issues: parsed.issues, fatal: `None of the FE IDs in this file are registered riders (for example ${skipped[0].feId}, from ID ${skipped[0].rawId}). Add them on the Riders page first.` };
+  }
+
+  const feIds = [...new Set(parsed.rows.map((r) => r.feId))];
   const tripIds = parsed.rows.map((r) => r.tripId);
   let alreadyImported = 0;
   for (let i = 0; i < tripIds.length; i += 200) {
@@ -126,6 +139,7 @@ export async function importAction(_prev: Preview | null, formData: FormData): P
     totalRows: parsed.totalRows,
     validRows: parsed.rows.length,
     issues: parsed.issues,
+    format: parsed.format,
     batched: parsed.rows.filter((r) => r.ordersInTrip === 2).length,
     dateRange: `${dates[0]} to ${dates[dates.length - 1]}`,
     cycles: [...cycleMap.values()],

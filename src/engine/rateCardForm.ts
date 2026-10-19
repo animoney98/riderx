@@ -26,6 +26,8 @@ export interface RateCardInput {
   extraKmRate: string;
   batchBonus: string;
   rainPerOrder: string;
+  /** Optional. One amount for a raining batched trip; blank = rain bonus per order times its orders. */
+  rainBatchedTrip?: string;
   festivalPerOrder: string;
   batchedTripBaseOrders: number;
 }
@@ -41,6 +43,7 @@ export function buildRateCard(i: RateCardInput): RateCard {
     extraKmRatePaise: rupeesToPaise(i.extraKmRate, 'Extra km rate'),
     batchBonusPaise: rupeesToPaise(i.batchBonus, 'Batch bonus'),
     rainBonusPaisePerOrder: rupeesToPaise(i.rainPerOrder, 'Rain bonus'),
+    ...(i.rainBatchedTrip?.trim() ? { rainBonusBatchedTripPaise: rupeesToPaise(i.rainBatchedTrip, 'Rain bonus for a batched trip') } : {}),
     festivalBonusPaisePerOrder: rupeesToPaise(i.festivalPerOrder, 'Festival bonus'),
     batchedTripBaseOrders: i.batchedTripBaseOrders,
   };
