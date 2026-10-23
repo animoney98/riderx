@@ -25,6 +25,13 @@ describe('daily and weekly aggregation', () => {
     const d = buildDaily(earned(t), 25)[0];
     expect([d.orders, d.slab1Orders, d.slab2Orders, d.batchedTrips]).toEqual([26, 25, 1, 1]);
   });
+  it('weekly: 76 single orders + 12 batched trips = 100 orders, base paid once per trip', () => {
+    const t = [...Array.from({ length: 76 }, (_, i) => trip(i, '2026-10-12')), ...Array.from({ length: 12 }, (_, i) => trip(100 + i, '2026-10-13', { ordersInTrip: 2 }))];
+    const [w] = buildWeekly(earned(t), cycleFor('2026-10-12'), 25);
+    expect([w.orders, w.singleOrders, w.batchedTrips]).toEqual([100, 76, 12]);
+    expect(w.basePaise).toBe(88 * 5000);
+    expect(w.batchBonusPaise).toBe(12 * 3000);
+  });
   it('weekly rows put orders on the right weekday and ignore trips outside the cycle', () => {
     const t = [trip(1, '2026-10-12'), trip(2, '2026-10-12'), trip(3, '2026-10-18'), trip(4, '2026-10-19')];
     const w = buildWeekly(earned(t), cycleFor('2026-10-12'), 25);

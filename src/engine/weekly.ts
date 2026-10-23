@@ -51,6 +51,8 @@ export interface WeeklyRow {
   orders: number;
   slab1Orders: number;
   slab2Orders: number;
+  /** Orders delivered alone (not in a batched trip). */
+  singleOrders: number;
   batchedTrips: number;
   km100: number;
   extraKm100: number;
@@ -94,12 +96,13 @@ export function buildWeekly(trips: EarnedTrip[], cycle: PayrollCycle, slab1Limit
     if (t.date < cycle.start || t.date > cycle.end) continue;
     let w = m.get(t.feId);
     if (!w) {
-      w = { feId: t.feId, ordersByDay: [0, 0, 0, 0, 0, 0, 0], orders: 0, slab1Orders: 0, slab2Orders: 0, batchedTrips: 0, km100: 0, extraKm100: 0, basePaise: 0, distancePaise: 0, batchBonusPaise: 0, rainPaise: 0, festivalPaise: 0, incentivesPaise: 0, grossPaise: 0 };
+      w = { feId: t.feId, ordersByDay: [0, 0, 0, 0, 0, 0, 0], orders: 0, slab1Orders: 0, slab2Orders: 0, singleOrders: 0, batchedTrips: 0, km100: 0, extraKm100: 0, basePaise: 0, distancePaise: 0, batchBonusPaise: 0, rainPaise: 0, festivalPaise: 0, incentivesPaise: 0, grossPaise: 0 };
       m.set(t.feId, w);
     }
     const s1 = slab1Count(t, slab1Limit);
     w.ordersByDay[weekdayIndex(t.date)] += t.orders;
     w.orders += t.orders; w.slab1Orders += s1; w.slab2Orders += t.orders - s1;
+    w.singleOrders += t.orders === 1 ? 1 : 0;
     w.batchedTrips += t.orders > 1 ? 1 : 0;
     w.km100 += t.km100; w.extraKm100 += t.extraKm100;
     w.basePaise += t.basePaise; w.distancePaise += t.distancePaise; w.batchBonusPaise += t.batchBonusPaise;

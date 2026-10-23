@@ -108,7 +108,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
               <tr>
                 <th>#</th><th>Rider</th><th>FE ID</th>
                 {DAYS.map((d, i) => <th key={d} className="n">{d}<br /><small style={{ fontWeight: 400 }}>{addDays(cycle.start, i).slice(5)}</small></th>)}
-                <th className="n">Orders</th><th className="n">At {r1}</th><th className="n">At {r2}</th><th className="n">Base</th><th className="n">Km</th><th className="n">Extra km</th>
+                <th className="n">Orders</th><th className="n">Single orders</th><th className="n">At {r1}</th><th className="n">At {r2}</th><th className="n">Base</th><th className="n">Km</th><th className="n">Extra km</th>
                 <th className="n">Distance</th><th className="n">Batched</th><th className="n">Batch bonus</th><th className="n">Rain</th><th className="n">Festival</th>
                 <th className="n">Gross</th><th className="n">Net payable</th><th className="n">Paid</th><th className="n">Outstanding</th><th>Pay on</th><th>Status</th>
               </tr>
@@ -118,7 +118,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                 <tr key={r.feId}>
                   <td>{i + 1}</td><td><b>{names.get(r.feId) || <span className="pill p-warn">Not registered</span>}</b></td><td>{r.feId}</td>
                   {r.ordersByDay.map((n, d) => <td key={d} className="n">{n || '–'}</td>)}
-                  <td className="n"><b>{r.orders}</b></td><td className="n">{r.slab1Orders}</td><td className="n">{r.slab2Orders}</td><td className="n">{formatINR(r.basePaise)}</td>
+                  <td className="n"><b>{r.orders}</b></td><td className="n">{r.singleOrders}</td><td className="n">{r.slab1Orders}</td><td className="n">{r.slab2Orders}</td><td className="n">{formatINR(r.basePaise)}</td>
                   <td className="n">{km(r.km100)}</td><td className="n">{km(r.extraKm100)}</td><td className="n">{formatINR(r.distancePaise)}</td>
                   <td className="n">{r.batchedTrips}</td><td className="n">{formatINR(r.batchBonusPaise)}</td><td className="n">{formatINR(r.rainPaise)}</td><td className="n">{formatINR(r.festivalPaise)}</td>
                   <td className="n">{formatINR(r.grossPaise)}</td><td className="n"><b>{formatINR(r.grossPaise)}</b></td><td className="n">{formatINR(payByFe.get(r.feId)?.paidPaise ?? 0)}</td><td className="n">{formatINR(payByFe.get(r.feId)?.outstandingPaise ?? r.grossPaise)}</td>
@@ -129,7 +129,7 @@ export default async function PayrollPage({ searchParams }: { searchParams: Prom
                 <tr className="total">
                   <td colSpan={3}>Total ({rows.length} riders)</td>
                   {[0, 1, 2, 3, 4, 5, 6].map((d) => <td key={d} className="n">{sum((r) => r.ordersByDay[d]) || '–'}</td>)}
-                  <td className="n">{sum((r) => r.orders)}</td><td className="n">{sum((r) => r.slab1Orders)}</td><td className="n">{sum((r) => r.slab2Orders)}</td><td className="n">{formatINR(sum((r) => r.basePaise))}</td>
+                  <td className="n">{sum((r) => r.orders)}</td><td className="n">{sum((r) => r.singleOrders)}</td><td className="n">{sum((r) => r.slab1Orders)}</td><td className="n">{sum((r) => r.slab2Orders)}</td><td className="n">{formatINR(sum((r) => r.basePaise))}</td>
                   <td className="n">{km(sum((r) => r.km100))}</td><td className="n">{km(sum((r) => r.extraKm100))}</td><td className="n">{formatINR(sum((r) => r.distancePaise))}</td>
                   <td className="n">{sum((r) => r.batchedTrips)}</td><td className="n">{formatINR(sum((r) => r.batchBonusPaise))}</td><td className="n">{formatINR(sum((r) => r.rainPaise))}</td><td className="n">{formatINR(sum((r) => r.festivalPaise))}</td>
                   <td className="n">{formatINR(gross)}</td><td className="n">{formatINR(gross)}</td><td className="n">{formatINR(paidTotal)}</td><td className="n">{formatINR(approvedCycle ? approvedTotal - paidTotal : gross)}</td><td></td><td></td>
