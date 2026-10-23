@@ -26,7 +26,7 @@ describe('daily and weekly aggregation', () => {
     expect([d.orders, d.slab1Orders, d.slab2Orders, d.batchedTrips]).toEqual([26, 25, 1, 1]);
   });
   it('weekly: 76 single orders + 12 batched trips = 100 orders, base paid once per trip', () => {
-    const t = [...Array.from({ length: 76 }, (_, i) => trip(i, '2026-10-12')), ...Array.from({ length: 12 }, (_, i) => trip(100 + i, '2026-10-13', { ordersInTrip: 2 }))];
+    const t = [...Array.from({ length: 76 }, (_, i) => trip(i, `2026-10-${12 + (i % 4)}`)), ...Array.from({ length: 12 }, (_, i) => trip(100 + i, `2026-10-${16 + (i % 2)}`, { ordersInTrip: 2 }))];
     const [w] = buildWeekly(earned(t), cycleFor('2026-10-12'), 25);
     expect([w.orders, w.singleOrders, w.batchedTrips]).toEqual([100, 76, 12]);
     expect(w.basePaise).toBe(88 * 5000);
